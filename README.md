@@ -1,4 +1,4 @@
-# Cloud Payment
+# Cloud Usage Billing
 
 클라우드 사용량 이벤트를 수집·집계하고 실시간 예상 금액과 월간 확정 금액을 제공하는 포트폴리오 프로젝트입니다.
 
