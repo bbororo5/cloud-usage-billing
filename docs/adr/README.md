@@ -4,9 +4,9 @@
 
 | ADR | 의제 | 시점 | 상태 |
 |---|---|---|---|
-| [001](0001-execution-unit-structure.md) | 실행 단위 구성 | 논리 아키텍처 확정 후 | 승인 |
+| [001](0001-execution-unit-structure.md) | 실행 단위 구성 | 논리 아키텍처 확정 후 | 부분 대체 |
 | [002](0002-event-streaming-for-realtime-aggregation.md) | 실시간 비용 집계를 위한 이벤트 스트리밍 | 이벤트 접수 구현 전 | 승인 |
-| [003](0003-realtime-cost-aggregation-and-query.md) | 실시간 대시보드를 위한 비용 집계·조회 | 집계 구현 전 | 초안 |
+| [003](0003-realtime-cost-aggregation-and-query.md) | 실시간 대시보드를 위한 비용 집계·조회 | 집계 구현 전 | 승인 |
 | 004 | 월간 검증·확정 배치 | 정산 구현 전 | 예정 |
 | 005 | 인증 상태 관리 | 로그인 구현 전 | 예정 |
 | 006 | 테넌트·RBAC 강제 방식 | 사용자 API 구현 전 | 예정 |
