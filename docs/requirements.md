@@ -69,12 +69,12 @@
 
 | 대상 | 기준 |
 |---|---|
-| 이벤트 외형 | CloudEvents 1.0.2 JSON |
-| 이벤트 내용 | 프로젝트 자체 `Instance Usage Event v1` |
+| 이벤트 외형 | CloudEvents 1.0.2 Structured JSON |
+| 이벤트 내용 | FOCUS 1.4 사용량 측정 필드 기반 `Instance Usage Event v1` |
 | 시간 | UTC 기반 RFC 3339 |
 | 정산 결과 | FOCUS 1.4 Cost and Usage 일부 |
 
-FOCUS 적용 필드는 `ChargePeriodStart/End`, `BillingPeriodStart/End`, `ConsumedQuantity/Unit`, `PricingQuantity/Unit`, `BilledCost/Currency`, `ResourceId`, `ServiceName`이며 전체 준수를 주장하지 않는다.
+입력과 정산 결과의 구체적인 적용 범위는 [Event Contract v1](event-contract.md)에 명시하며 전체 FOCUS 준수를 주장하지 않는다.
 
 ## 6. 제약사항
 
@@ -92,6 +92,4 @@ FOCUS 적용 필드는 `ChargePeriodStart/End`, `BillingPeriodStart/End`, `Consu
 
 ## 7. 미결 사항
 
-- `Instance Usage Event v1` 필수 항목
-- 월 마감 후 도착한 이벤트 처리 방식
-- 정산 확정 시점과 재실행 기준
+현재 아키텍처 설계를 막는 미결 사항은 없다. 구현 중 중요한 선택이 생기면 ADR로 추가한다.

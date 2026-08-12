@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/bbororo5/cloud-usage-billing/main/contracts/v1/instance-usage-event.schema.json",
+  "title": "Instance Usage Event v1",
+  "type": "object",
+  "required": [
+    "specversion",
+    "id",
+    "source",
+    "type",
+    "subject",
+    "time",
+    "datacontenttype",
+    "dataschema",
+    "data"
+  ],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "format": "uuid" },
+    "source": {
+      "type": "string",
+      "pattern": "^urn:cloud-usage:meter:[A-Za-z0-9._-]+$"
+    },
+    "type": {
+      "const": "io.github.bbororo5.cloudusage.instance.usage.v1"
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^instances/[A-Za-z0-9._-]+$"
+    },
+    "time": { "type": "string", "format": "date-time" },
+    "datacontenttype": { "const": "application/json" },
+    "dataschema": { "const": "https://raw.githubusercontent.com/bbororo5/cloud-usage-billing/main/contracts/v1/instance-usage-event.schema.json" },
+    "data": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/computeRecord" },
+          { "$ref": "#/$defs/storageRecord" },
+          { "$ref": "#/$defs/networkRecord" }
+        ]
+      },
+      "allOf": [
+        {
+          "contains": { "$ref": "#/$defs/computeRecord" },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": { "$ref": "#/$defs/storageRecord" },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": { "$ref": "#/$defs/networkRecord" },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "baseRecord": {
+      "type": "object",
+      "required": [
+        "BillingAccountId",
+        "ChargePeriodStart",
+        "ChargePeriodEnd",
+        "RegionId",
+        "ResourceId",
+        "ResourceType",
+        "ServiceCategory",
+        "ServiceName",
+        "SkuId",
+        "SkuMeter",
+        "ConsumedQuantity",
+        "ConsumedUnit"
+      ],
+      "properties": {
+        "BillingAccountId": { "type": "string", "minLength": 1 },
+        "ChargePeriodStart": { "type": "string", "format": "date-time" },
+        "ChargePeriodEnd": { "type": "string", "format": "date-time" },
+        "RegionId": { "const": "kr-central-1" },
+        "ResourceId": { "type": "string", "minLength": 1 },
+        "ResourceType": { "const": "Virtual Machine" },
+        "ConsumedQuantity": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "computeRecord": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/baseRecord" },
+        {
+          "type": "object",
+          "required": ["x_ComputeSessionId"],
+          "properties": {
+            "ServiceCategory": { "const": "Compute" },
+            "ServiceName": { "const": "Compute" },
+            "SkuId": {
+              "enum": [
+                "compute-small-linux",
+                "compute-medium-linux",
+                "compute-large-linux"
+              ]
+            },
+            "SkuMeter": { "const": "Compute Usage" },
+            "ConsumedUnit": { "const": "Second" },
+            "x_ComputeSessionId": {
+              "type": ["string", "null"],
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "if": {
+            "type": "object",
+            "properties": {
+              "ConsumedQuantity": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            }
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "x_ComputeSessionId": { "type": "string" }
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "storageRecord": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/baseRecord" },
+        {
+          "type": "object",
+          "properties": {
+            "ServiceCategory": { "const": "Storage" },
+            "ServiceName": { "const": "Block Storage" },
+            "SkuId": { "const": "storage-block-standard" },
+            "SkuMeter": { "const": "Block Volume Usage" },
+            "ConsumedUnit": { "const": "GiB-Second" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "networkRecord": {
+      "type": "object",
+      "allOf": [
+        { "$ref": "#/$defs/baseRecord" },
+        {
+          "type": "object",
+          "properties": {
+            "ServiceCategory": { "const": "Networking" },
+            "ServiceName": { "const": "Network" },
+            "SkuId": { "const": "network-internet-egress" },
+            "SkuMeter": { "const": "Data Transfer" },
+            "ConsumedUnit": { "const": "Byte" }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  }
+}

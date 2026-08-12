@@ -1,0 +1,55 @@
+{
+  "specversion": "1.0",
+  "id": "0198a25d-63c7-7c81-9d8c-14e94527c941",
+  "source": "urn:cloud-usage:meter:generator-01",
+  "type": "io.github.bbororo5.cloudusage.instance.usage.v1",
+  "subject": "instances/i-000123",
+  "time": "2026-08-12T00:01:00Z",
+  "datacontenttype": "application/json",
+  "dataschema": "https://raw.githubusercontent.com/bbororo5/cloud-usage-billing/main/contracts/v1/instance-usage-event.schema.json",
+  "data": [
+    {
+      "BillingAccountId": "tenant-001",
+      "ChargePeriodStart": "2026-08-12T00:00:00Z",
+      "ChargePeriodEnd": "2026-08-12T00:01:00Z",
+      "RegionId": "kr-central-1",
+      "ResourceId": "i-000123",
+      "ResourceType": "Virtual Machine",
+      "ServiceCategory": "Compute",
+      "ServiceName": "Compute",
+      "SkuId": "compute-medium-linux",
+      "SkuMeter": "Compute Usage",
+      "ConsumedQuantity": 60,
+      "ConsumedUnit": "Second",
+      "x_ComputeSessionId": "session-9271"
+    },
+    {
+      "BillingAccountId": "tenant-001",
+      "ChargePeriodStart": "2026-08-12T00:00:00Z",
+      "ChargePeriodEnd": "2026-08-12T00:01:00Z",
+      "RegionId": "kr-central-1",
+      "ResourceId": "i-000123",
+      "ResourceType": "Virtual Machine",
+      "ServiceCategory": "Storage",
+      "ServiceName": "Block Storage",
+      "SkuId": "storage-block-standard",
+      "SkuMeter": "Block Volume Usage",
+      "ConsumedQuantity": 6000,
+      "ConsumedUnit": "GiB-Second"
+    },
+    {
+      "BillingAccountId": "tenant-001",
+      "ChargePeriodStart": "2026-08-12T00:00:00Z",
+      "ChargePeriodEnd": "2026-08-12T00:01:00Z",
+      "RegionId": "kr-central-1",
+      "ResourceId": "i-000123",
+      "ResourceType": "Virtual Machine",
+      "ServiceCategory": "Networking",
+      "ServiceName": "Network",
+      "SkuId": "network-internet-egress",
+      "SkuMeter": "Data Transfer",
+      "ConsumedQuantity": 1048576,
+      "ConsumedUnit": "Byte"
+    }
+  ]
+}
