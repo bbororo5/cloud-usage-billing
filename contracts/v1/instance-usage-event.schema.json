@@ -95,7 +95,6 @@
         { "$ref": "#/$defs/baseRecord" },
         {
           "type": "object",
-          "required": ["x_ComputeSessionId"],
           "properties": {
             "ServiceCategory": { "const": "Compute" },
             "ServiceName": { "const": "Compute" },
@@ -107,29 +106,7 @@
               ]
             },
             "SkuMeter": { "const": "Compute Usage" },
-            "ConsumedUnit": { "const": "Second" },
-            "x_ComputeSessionId": {
-              "type": ["string", "null"],
-              "minLength": 1
-            }
-          }
-        },
-        {
-          "type": "object",
-          "if": {
-            "type": "object",
-            "properties": {
-              "ConsumedQuantity": {
-                "type": "integer",
-                "exclusiveMinimum": 0
-              }
-            }
-          },
-          "then": {
-            "type": "object",
-            "properties": {
-              "x_ComputeSessionId": { "type": "string" }
-            }
+            "ConsumedUnit": { "const": "Second" }
           }
         }
       ],

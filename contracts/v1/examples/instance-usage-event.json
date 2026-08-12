@@ -20,8 +20,7 @@
       "SkuId": "compute-medium-linux",
       "SkuMeter": "Compute Usage",
       "ConsumedQuantity": 60,
-      "ConsumedUnit": "Second",
-      "x_ComputeSessionId": "session-9271"
+      "ConsumedUnit": "Second"
     },
     {
       "BillingAccountId": "tenant-001",

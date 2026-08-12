@@ -13,7 +13,7 @@
 | 시간 | UTC RFC 3339, 시작 포함·종료 제외 |
 | 검증 | [JSON Schema](../contracts/v1/instance-usage-event.schema.json), [예시 이벤트](../contracts/v1/examples/instance-usage-event.json) |
 
-입력은 비용이 계산되기 전이므로 FOCUS 전체 준수를 주장하지 않는다. 실행 단위 식별만 FOCUS 확장 규칙에 따라 `x_ComputeSessionId`로 정의한다.
+입력은 비용이 계산되기 전이므로 FOCUS 전체 준수를 주장하지 않으며, 사용량 측정에 필요한 표준 필드만 사용한다.
 
 ## 3. CloudEvents 계약
 
@@ -40,14 +40,11 @@
 | 블록 스토리지 | `Storage` | `Block Volume Usage` | 할당 GiB × 초·`GiB-Second` |
 | 외부 전송 | `Networking` | `Data Transfer` | 전송 바이트·`Byte` |
 
-Compute 레코드는 실행 1회당 최소 60초 과금을 위해 `x_ComputeSessionId`를 추가한다.
-
 ## 5. 검증 규칙
 
 - 일반 구간은 60초이며 종료 시 마지막 구간만 60초 미만일 수 있다.
 - 한 이벤트의 세 레코드는 계정·자원·리전·구간이 같고 각 사용량이 한 번씩 존재한다.
 - 모든 수량은 0 이상의 정수다.
-- Compute 수량이 0보다 크면 `x_ComputeSessionId`가 필수다.
 - 같은 인스턴스의 사용 구간은 겹치지 않는다.
 - 단가·통화·금액과 수신 시각은 입력에 포함하지 않는다.
 
