@@ -20,13 +20,14 @@
 | 책임 | 테이블 | 핵심 키 |
 |---|---|---|
 | 사용자·소속 | `app_user`, `billing_account`, `billing_membership` | 사용자·회사, 회사+사용자 |
+| 사용자 세션 | `spring_session`, `spring_session_attributes` | 불투명 세션 ID |
 | 보안 증거 | `security_audit_event` | 감사 UUIDv7 |
 | 발생기 인증 | `usage_producer`, `producer_credential` | 회사+발생기, 자격 증명 UUIDv7 |
 | 거부 기록 | `event_rejection` | 거부 UUIDv7 |
 | 가격 | `pricing_sku`, `price_rate` | SKU, 가격 UUIDv7 |
 | 월간 정산 | `settlement_job`, `settlement_attempt`, `settlement_validation`, `monthly_settlement` | 회사+월, 실행 UUIDv7 |
 
-Spring Session JDBC 테이블은 사용하는 Spring Session 버전의 공식 스키마로 설치한다. `principal_name`에는 `user_id` 문자열만 저장하고 회사·역할은 저장하지 않는다.
+Spring Session JDBC 4.1의 공식 PostgreSQL 스키마를 `billing` 스키마에 설치한다. `principal_name`에는 `user_id` 문자열만 저장하고 회사·역할은 저장하지 않는다.
 
 ## 4. 무결성
 
@@ -69,6 +70,7 @@ FK는 PostgreSQL이 자동 인덱싱하지 않으므로 부모 삭제·조인 �
 - 클라이언트가 보낸 회사 식별자는 세션 컨텍스트에 사용하지 않는다.
 - RLS 정책은 현재 사용자 본인의 소속 조회와 현재 회사 데이터만 허용한다.
 - 애플리케이션 계정은 테이블 소유자나 `BYPASSRLS` 권한을 갖지 않는다.
+- 로컬에서도 수집·BFF·배치 계정을 분리하고 필요한 테이블 권한만 부여한다.
 - 발생기 인증과 내부 배치는 사용자 세션 대신 명시적인 회사 범위를 설정한다.
 - 가격표와 인증 전 거부 기록은 테넌트 RLS 대상이 아니며 전용 실행 계정의 최소 권한으로 격리한다.
 

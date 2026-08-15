@@ -50,6 +50,31 @@ create unique index billing_membership_active_user_uq
 create index billing_membership_user_idx
     on billing.billing_membership (user_id);
 
+-- Spring Session JDBC 4.1 PostgreSQL schema, placed in the billing schema.
+create table billing.spring_session (
+    primary_id char(36) not null,
+    session_id char(36) not null,
+    creation_time bigint not null,
+    last_access_time bigint not null,
+    max_inactive_interval integer not null,
+    expiry_time bigint not null,
+    principal_name varchar(100),
+    constraint spring_session_pk primary key (primary_id)
+);
+
+create unique index spring_session_ix1 on billing.spring_session (session_id);
+create index spring_session_ix2 on billing.spring_session (expiry_time);
+create index spring_session_ix3 on billing.spring_session (principal_name);
+
+create table billing.spring_session_attributes (
+    session_primary_id char(36) not null,
+    attribute_name varchar(200) not null,
+    attribute_bytes bytea not null,
+    constraint spring_session_attributes_pk primary key (session_primary_id, attribute_name),
+    constraint spring_session_attributes_fk foreign key (session_primary_id)
+        references billing.spring_session(primary_id) on delete cascade
+);
+
 create or replace function billing.protect_last_admin()
 returns trigger
 language plpgsql
