@@ -4,17 +4,22 @@ spring-dependency-management = "1.1.7"
 cloudevents = "5.0.0"
 json-schema-validator = "3.0.6"
 jackson2 = "2.21.3"
+uuid-creator = "6.1.1"
 
 [libraries]
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
 spring-boot-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
 spring-boot-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc" }
 spring-boot-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 spring-boot-dependencies = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
 cloudevents-bom = { module = "io.cloudevents:cloudevents-bom", version.ref = "cloudevents" }
 cloudevents-json-jackson = { module = "io.cloudevents:cloudevents-json-jackson" }
 json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
 jackson2-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson2" }
+spring-boot-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka" }
+postgresql = { module = "org.postgresql:postgresql" }
+uuid-creator = { module = "com.github.f4b6a3:uuid-creator", version.ref = "uuid-creator" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

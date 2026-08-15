@@ -1,6 +1,30 @@
 spring:
   application:
     name: usage-event-api
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/billing}
+    username: ${POSTGRES_USER:billing_owner}
+    password: ${POSTGRES_PASSWORD:local-dev-only}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 5000
+        max.in.flight.requests.per.connection: 5
+
+server:
+  port: ${SERVER_PORT:8081}
+
+billing:
+  ingestion:
+    topic: usage-events.v1
+    publish-timeout: 10s
+    max-payload-bytes: 65536
 
 management:
   endpoints:
