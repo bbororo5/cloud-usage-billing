@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: settlement-batch
+  main:
+    web-application-type: none

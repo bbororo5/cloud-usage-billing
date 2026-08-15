@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: usage-event-api
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

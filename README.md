@@ -7,6 +7,16 @@
 ## 개발 환경
 
 - Java 21
+- Spring Boot 4.1
+- PostgreSQL 17, Apache Kafka 4.3, ClickHouse 26.3 LTS
+
+## 로컬 실행 기반
+
+```bash
+./scripts/verify-foundation.sh
+```
+
+애플리케이션은 `apps` 아래의 실행 단위별 Gradle 모듈로 구성한다.
 
 ## 문서
 
