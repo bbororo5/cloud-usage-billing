@@ -5,6 +5,7 @@ cloudevents = "5.0.0"
 json-schema-validator = "3.0.6"
 jackson2 = "2.21.3"
 uuid-creator = "6.1.1"
+clickhouse-jdbc = "0.9.8"
 
 [libraries]
 spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter" }
@@ -20,6 +21,7 @@ jackson2-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-js
 spring-boot-kafka = { module = "org.springframework.boot:spring-boot-starter-kafka" }
 postgresql = { module = "org.postgresql:postgresql" }
 uuid-creator = { module = "com.github.f4b6a3:uuid-creator", version.ref = "uuid-creator" }
+clickhouse-jdbc = { module = "com.clickhouse:clickhouse-jdbc", version.ref = "clickhouse-jdbc" }
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

@@ -3,3 +3,31 @@ spring:
     name: usage-ledger-writer
   main:
     web-application-type: none
+  datasource:
+    url: ${CLICKHOUSE_URL:jdbc:clickhouse:http://localhost:8123/billing}
+    username: ${CLICKHOUSE_USER:billing_owner}
+    password: ${CLICKHOUSE_PASSWORD:local-dev-only}
+    driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: usage-ledger-writer-v1
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      max-poll-records: 500
+    listener:
+      type: batch
+      ack-mode: manual_immediate
+      concurrency: ${LEDGER_WRITER_CONCURRENCY:3}
+
+billing:
+  ledger-writer:
+    topic: usage-events.v1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
