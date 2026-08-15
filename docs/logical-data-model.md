@@ -478,6 +478,96 @@ SettlementJob   1 ── 0..1 MonthlySettlement
 - 확정 트랜잭션과 장애 지점별 복구 쿼리
 - 금액 Decimal 정밀도와 반올림 규칙
 
-## 8. 다음 영역
+## 8. 전체 모델 검증
 
-전체 모델을 API와 품질 시나리오에 다시 연결해 누락·중복 소유권을 검증한다.
+### 관계 지도
+
+```text
+User ── BillingMembership ── BillingAccount ── UsageEvent ── UsageRecord
+  └──── AuthenticationSession        │                         └─ PricingSku ─ PriceRate
+                                     ├─ SecurityAuditEvent
+                                     └─ SettlementJob ── SettlementAttempt ── SettlementValidation
+                                              └───────── MonthlySettlement
+
+UsageProducer ── ProducerCredential
+      └──────── UsageEvent
+
+UsageRecord + PriceRate ── CalculatedCharge (파생)
+```
+
+### 경계를 잇는 식별자
+
+| 식별자 | 연결 범위 |
+|---|---|
+| `BillingAccountId` | 소속·사용량·감사·정산의 동일 회사 범위 |
+| `source + id` | Kafka 재전송과 ClickHouse 논리 이벤트 중복 판정 |
+| `source + id + SkuMeter` | 이벤트 안의 서비스별 사용량 레코드 |
+| `SkuId` | 사용량과 가격 정책 |
+| `PriceRateId` | 계산 금액과 적용 가격 버전 |
+| `BillingAccountId + BillingMonth` | 회사별 월간 작업과 확정 결과 |
+| `RunId` | 재시도별 실행·검증·확정 근거 |
+
+`tenantId`는 내부 구현에서 사용하는 이름이며 논리적으로 `BillingAccountId`와 같다. 별도 회사 식별자를 만들지 않는다.
+
+### API와 모델 연결
+
+| API | 사용하는 모델 |
+|---|---|
+| 세션·내 정보 | `User`, `AuthenticationSession`, `BillingMembership`, `BillingAccount` |
+| 비용 조회 | `BillingMembership`, `UsageRecord`, `PricingSku`, `PriceRate`, 파생 `CalculatedCharge` |
+| 월간 확정 조회 | `BillingMembership`, `MonthlySettlement` |
+| 원본 사용량 조회 | `BillingMembership`, `UsageRecord` |
+| 구성원·역할 관리 | `BillingMembership`, `User`, `SecurityAuditEvent` |
+| 이벤트 수신 | `UsageProducer`, `ProducerCredential`, `UsageEvent`, `EventRejection` |
+
+사용자 API는 `BillingAccountId`를 입력받지 않고 현재 세션의 소속에서 결정한다.
+
+### 파생 데이터의 의미
+
+- 현재 예상 비용과 `CalculatedCharge`는 요청 시 계산하며 정답으로 저장하지 않는다.
+- `dataAsOf`는 해당 조회에 포함된 중복 제거 사용량의 가장 늦은 `ChargePeriodEnd`다.
+- 조회 조건에 맞는 사용량이 없으면 `dataAsOf`는 `null`이다.
+- `dataAsOf`는 발생기가 보내지 않은 이벤트까지 완전하다는 보장이 아니다.
+- 가격 사본·조회 캐시·선집계는 원본에서 다시 만들 수 있어야 한다.
+- 확정 결과만 `MonthlySettlement`로 영속화한다.
+
+### 품질 시나리오 확인
+
+| 관점 | 모델의 방어 근거 |
+|---|---|
+| 중복·지연·재계산 | 논리 이벤트 식별자, 사용 구간, 가격 버전 |
+| 배치 실패·재시도 | 단일 월간 작업, 복수 실행 시도, 단일 확정 결과 |
+| 테넌트·역할 격리 | 소속별 역할과 전 영역의 `BillingAccountId` |
+| 권한 변경 즉시 반영 | 사용자만 식별하는 세션과 현재 소속 조회 |
+| 추적 가능성 | 예상 금액은 `UsageRecord + PriceRate`, 확정 금액은 `MonthlySettlement + RunId`로 근거 추적 |
+| 조회 성능 | 물리 모델의 파티션·정렬·쿼리로 검증 |
+
+### 요구사항 추적
+
+| 근거 | 모델 또는 후속 검증 |
+|---|---|
+| `FR-01`, `FR-02` | 발생기·이벤트·거부·사용량 원장 |
+| `FR-03`, `FR-04` | 사용량·가격 버전·파생 비용 |
+| `FR-05` | 월간 작업·실행·검증·확정 |
+| `FR-06`~`FR-08`, `FR-10`, `FR-12` | 사용자·소속·역할·세션·감사 |
+| `FR-09` | 전 영역의 단일 `BillingAccountId` |
+| `FR-11` | 영속 모델 추가 없이 API 계약을 사용하는 웹 화면 |
+| `FR-13` | 서비스별 사용량 레코드와 조회 조건 |
+| `QS-01`, `QS-02` | 논리 이벤트 식별과 사용 구간 |
+| `QS-03` | Kafka 수신 로그와 물리 처리량 검증 |
+| `QS-04`, `QS-13` | ClickHouse 물리 모델과 부하 검증 |
+| `QS-05`, `QS-06` | 실행 시도·단일 확정·가격 버전 |
+| `QS-07` | 소속과 전 데이터의 `BillingAccountId` |
+| `QS-08`, `QS-09` | 계산 연결과 `dataAsOf` 의미 |
+| `QS-10`, `QS-11` | 현재 역할 조회·세션 폐기·감사 |
+| `QS-12` | 진행 결과 비공개와 배치·조회 부하 격리 검증 |
+
+### 물리 저장소로 전달
+
+| 저장소 | 논리 모델 |
+|---|---|
+| PostgreSQL | 사용자·소속·세션·감사·발생기 자격 증명·가격·배치·확정 |
+| Kafka | 검증된 `UsageEvent` 수신 로그 |
+| ClickHouse | 서비스별 `UsageRecord`와 재생성 가능한 가격 사본 |
+
+논리 모델에는 정답 소유자가 둘인 데이터가 없다. 다음 단계에서는 이 모델을 PostgreSQL과 ClickHouse의 키·제약·파티션·정렬 구조로 변환한다.

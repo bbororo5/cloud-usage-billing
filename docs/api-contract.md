@@ -30,7 +30,7 @@
 - `groupBy`: `day`, `service`, `resource` 중 최대 2개
 - `sort`, `direction`, `limit`: 정렬과 결과 제한
 - 사용량 정렬은 단위가 하나로 제한되는 조회에서만 허용한다.
-- 응답은 요청 기간과 실제 반영 기준인 `dataAsOf`를 구분한다.
+- 응답은 요청 기간과 실제 포함된 사용량의 가장 늦은 `ChargePeriodEnd`인 `dataAsOf`를 구분한다. 사용량이 없으면 `null`이며 발생기가 보내지 않은 이벤트의 완전성은 보장하지 않는다.
 
 집계 결과는 제한된 크기로 반환한다. 원본 사용량만 `(ChargePeriodEnd, source, id)` 기준의 불투명한 커서로 페이지네이션한다.
 

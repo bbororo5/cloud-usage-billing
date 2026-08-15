@@ -369,7 +369,7 @@ components:
       required: [period, dataAsOf, currency, groupBy, items]
       properties:
         period: { $ref: '#/components/schemas/Period' }
-        dataAsOf: { type: string, format: date-time }
+        dataAsOf: { type: [string, 'null'], format: date-time }
         currency: { type: string, const: KRW }
         groupBy:
           type: array
