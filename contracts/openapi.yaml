@@ -297,13 +297,13 @@ components:
       name: from
       in: query
       required: true
-      description: 포함되는 UTC 시작 시각
+      description: 포함되는 UTC 분 경계 시작 시각
       schema: { type: string, format: date-time }
     To:
       name: to
       in: query
       required: true
-      description: 제외되는 UTC 종료 시각, from부터 최대 31일
+      description: 제외되는 UTC 분 경계 종료 시각, from부터 최대 31일
       schema: { type: string, format: date-time }
     UserId:
       name: userId

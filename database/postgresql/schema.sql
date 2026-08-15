@@ -250,6 +250,7 @@ create table billing.price_rate (
     unit_price numeric(30,18) not null,
     currency char(3) not null default 'KRW',
     created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
     constraint price_rate_sku_fk foreign key (sku_id)
         references billing.pricing_sku (sku_id),
     constraint price_rate_period_valid check (valid_to is null or valid_to > valid_from),
@@ -279,11 +280,13 @@ begin
        or new.valid_from <> old.valid_from
        or new.unit_price <> old.unit_price
        or new.currency <> old.currency
+       or new.created_at <> old.created_at
        or old.valid_to is not null
        or new.valid_to is null then
         raise exception 'only an open price rate may be closed once'
             using errcode = '55000';
     end if;
+    new.updated_at := clock_timestamp();
     return new;
 end;
 $$;
@@ -291,6 +294,21 @@ $$;
 create trigger price_rate_history_guard
 before update or delete on billing.price_rate
 for each row execute function billing.protect_price_history();
+
+create view billing.clickhouse_price_rate_export as
+select
+    r.price_rate_id,
+    r.sku_id,
+    s.service_category,
+    s.sku_meter,
+    s.consumed_unit,
+    r.valid_from,
+    r.valid_to,
+    r.unit_price,
+    r.currency,
+    floor(extract(epoch from r.updated_at) * 1000000)::bigint as sync_version
+from billing.price_rate r
+join billing.pricing_sku s on s.sku_id = r.sku_id;
 
 create table billing.settlement_job (
     billing_account_id text not null,

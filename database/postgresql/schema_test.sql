@@ -63,6 +63,32 @@ begin
 end;
 $$;
 
+update billing.price_rate
+   set valid_to = '2026-09-01T00:00:00Z'
+ where price_rate_id = '0198a25d-63c7-7101-8000-000000000101';
+
+insert into billing.price_rate (
+    price_rate_id, sku_id, valid_from, valid_to, unit_price
+) values (
+    '0198a25d-63c7-7103-8000-000000000103',
+    'compute-small-linux',
+    '2026-09-01T00:00:00Z',
+    null,
+    0.002000000000000000
+);
+
+do $$
+declare
+    exported_count integer;
+begin
+    select count(*) into exported_count
+      from billing.clickhouse_price_rate_export;
+    if exported_count <> 2 then
+        raise exception 'price export contains % rows', exported_count;
+    end if;
+end;
+$$;
+
 insert into billing.settlement_job (
     billing_account_id, billing_month
 ) values (

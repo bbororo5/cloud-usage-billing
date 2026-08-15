@@ -52,6 +52,8 @@ Spring Session JDBC 테이블은 사용하는 Spring Session 버전의 공식 �
 
 FK는 PostgreSQL이 자동 인덱싱하지 않으므로 부모 삭제·조인 경로에 필요한 자식 인덱스를 명시한다.
 
+`clickhouse_price_rate_export`는 SKU 정의와 가격을 펼치고 `updated_at`을 단조로운 동기화 버전으로 변환한다. 단가는 바꾸지 않으며 열린 가격의 `valid_to`만 한 번 닫을 수 있다.
+
 ## 6. 테넌트 격리
 
 사용자 API 트랜잭션은 다음 순서를 따른다.
