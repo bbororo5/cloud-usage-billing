@@ -195,6 +195,8 @@ User           1 ── 0..N RoleChangeAudit  : target
 
 | 사실 | 엔티티 |
 |---|---|
+| 사용량을 발행할 수 있는 시스템 신원이 존재한다. | `UsageProducer` |
+| 발생기 자격 증명의 유효 상태를 관리한다. | `ProducerCredential` |
 | 특정 출처에서 사용량 이벤트가 발생했다. | `UsageEvent` |
 | 이벤트에 세 종류의 측정 사용량이 포함됐다. | `UsageRecord` |
 | 이벤트가 계약을 위반해 거부됐다. | `EventRejection` |
@@ -205,6 +207,8 @@ Kafka의 재전송 사본은 새로운 `UsageEvent`가 아니다. 같은 `source
 
 | 엔티티 | 책임 | 논리 식별자 |
 |---|---|---|
+| `UsageProducer` | 허용된 이벤트 발생기 신원과 CloudEvents 출처 | `ProducerId` |
+| `ProducerCredential` | 발생기 비밀의 해시·유효 기간·폐기 상태 | `CredentialId` |
 | `UsageEvent` | CloudEvents 식별·출처·발생 시각과 측정 묶음 | `source + id` |
 | `UsageRecord` | 서비스별 측정량과 사용 구간 | `source + id + SkuMeter` |
 | `EventRejection` | 거부 시점·단계·사유와 식별 가능한 요청 정보 | `RejectionId` |
@@ -214,10 +218,13 @@ Kafka의 재전송 사본은 새로운 `UsageEvent`가 아니다. 같은 `source
 ### 관계와 카디널리티
 
 ```text
+UsageProducer  1 ── N ProducerCredential
+UsageProducer  1 ── N UsageEvent
 BillingAccount 1 ── N UsageEvent
 UsageEvent      1 ── 3 UsageRecord
 ```
 
+- 하나의 발생기는 회전을 위해 여러 자격 증명 이력을 가질 수 있다.
 - 한 이벤트는 Compute·Storage·Networking 레코드를 각각 하나씩 가진다.
 - Kafka에는 같은 논리 이벤트의 전달 사본이 하나 이상 존재할 수 있다.
 - 유효 이벤트만 Kafka 수신 로그와 ClickHouse 사용량 원장으로 전달된다.
@@ -225,6 +232,7 @@ UsageEvent      1 ── 3 UsageRecord
 
 ### 상태와 생명주기
 
+- 발생기 자격 증명은 발급 후 활성화되고 만료·회전·폐기로 효력을 잃는다.
 - 요청은 계약 검증 후 거부되거나 Kafka에 내구성 있게 기록된다.
 - Kafka 소비자는 이벤트를 세 사용량 레코드로 풀어 ClickHouse에 추가한다.
 - 유효 이벤트와 사용량 레코드는 수정하지 않는다.
@@ -233,6 +241,9 @@ UsageEvent      1 ── 3 UsageRecord
 
 ### 불변 규칙
 
+- 인증된 발생기의 `ProducerId`와 CloudEvents `source`가 일치해야 한다.
+- 활성 상태와 유효 기간을 만족하는 발생기 자격 증명만 사용할 수 있다.
+- 발생기 비밀 원문은 저장하지 않는다.
 - `source + id`가 같으면 재전송된 동일 이벤트다.
 - 세 레코드의 `BillingAccountId`, `ResourceId`, 리전과 사용 구간은 같다.
 - 사용 구간은 시작 포함·종료 제외이며 일반 구간은 60초다.
@@ -253,7 +264,8 @@ UsageEvent      1 ── 3 UsageRecord
 
 | 동작 | 읽기 | 변경 |
 |---|---|---|
-| 이벤트 검증 | 요청 CloudEvent | `EventRejection` 또는 Kafka 로그 |
+| 발생기 인증 | `UsageProducer`, `ProducerCredential` | 자격 증명 사용 기록 |
+| 이벤트 검증 | 인증된 발생기, 요청 CloudEvent | `EventRejection` 또는 Kafka 로그 |
 | 원장 적재 | Kafka의 `UsageEvent` | ClickHouse `UsageRecord` 추가 |
 | 예상 비용 조회 | 중복 제거된 `UsageRecord` | 없음 |
 | 원본 상세 조회 | 중복 제거된 `UsageRecord` | 없음 |
@@ -261,6 +273,8 @@ UsageEvent      1 ── 3 UsageRecord
 
 ### 검증 시나리오
 
+- 폐기된 발생기 자격 증명으로 보낸 이벤트는 Kafka에 기록되지 않는다.
+- 인증된 발생기와 다른 `source`를 선언한 이벤트는 거부된다.
 - 같은 `source + id`를 반복 전달해도 사용량 합계가 변하지 않는다.
 - 순서가 바뀌어 도착해도 `ChargePeriodStart/End` 기준 결과가 같다.
 - 세 레코드 중 하나가 없거나 단위가 틀린 이벤트는 원장에 들어가지 않는다.
@@ -269,6 +283,7 @@ UsageEvent      1 ── 3 UsageRecord
 
 ### 물리 모델로 넘길 사항
 
+- 발생기 비밀의 해시 방식과 발급·회전 절차
 - 거부 이벤트의 저장 범위·저장소·보관 기간
 - Kafka topic·보관 기간과 consumer group
 - ClickHouse 엔진·파티션·정렬 키
