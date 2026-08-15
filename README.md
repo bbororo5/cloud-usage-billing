@@ -17,6 +17,7 @@
 - [Architecture](docs/architecture.md)
 - [Data Ownership](docs/data-ownership.md)
 - [Logical Data Model](docs/logical-data-model.md)
+- [PostgreSQL Physical Data Model](docs/postgresql-physical-data-model.md)
 - [Event Contract v1](docs/event-contract.md)
 - [API Contract v1](docs/api-contract.md)
 - [ADR Roadmap](docs/adr/README.md)
