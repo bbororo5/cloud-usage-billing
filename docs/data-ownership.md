@@ -51,6 +51,7 @@ ClickHouse 사용량 + 가격
 
 ## 5. 후속 결정
 
-- 거부 이벤트의 물리 저장 방식과 보관 기간
-- PostgreSQL 가격을 ClickHouse 조회 사본으로 전달하는 방식
-- Kafka와 ClickHouse의 보관·파티션·정렬 기준
+- 거부 이벤트는 PostgreSQL에 payload 없이 저장한다. 보관 기간은 운영 측정 후 정한다.
+- PostgreSQL 가격 export를 ClickHouse 버전 사본으로 동기화한다.
+- ClickHouse는 사용 시작 월로 파티션하고 회사·일·서비스·리소스·시각 순으로 정렬한다.
+- Kafka 파티션 수·복제 수·보관 기간은 로컬 환경과 성능 검증 환경에서 각각 확정한다.

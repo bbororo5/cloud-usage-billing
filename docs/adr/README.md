@@ -10,6 +10,7 @@
 | [004](0004-monthly-validation-and-finalization-batch.md) | 월간 검증·확정 배치 | 정산 구현 전 | 승인 |
 | [005](0005-authentication-state-management.md) | 인증 상태 관리 | 로그인 구현 전 | 승인 |
 | [006](0006-tenant-rbac-enforcement.md) | 테넌트·RBAC 강제 방식 | 사용자 API 구현 전 | 승인 |
+| [007](0007-usage-ledger-writer-execution-unit.md) | Kafka에서 ClickHouse로 원장을 적재하는 실행 단위 | 물리 데이터 흐름 확정 후 | 승인 |
 
 캐시와 배포 환경은 성능 측정이나 실제 배포에서 중요한 선택이 생길 때만 ADR로 추가한다.
 
