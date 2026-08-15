@@ -368,6 +368,101 @@ PriceRate   1 ─┘
 - 금액·단가의 Decimal 정밀도와 반올림 시점
 - 가격 경계에서 사용량을 분할·검증하는 위치
 
-## 7. 다음 영역
+## 7. 월간 검증·확정
 
-배치 실행·검증 차이·월간 확정 결과의 관계를 같은 절차로 모델링한다.
+### 근거가 된 사용 사례
+
+- 월 사용량을 다시 계산해 예상 결과를 검증하고 확정한다. (`FR-05`)
+- 실패한 배치를 안전하게 재실행한다. (`QS-05`)
+- 배치 중에도 기존 확정 결과만 사용자에게 제공한다. (`QS-12`)
+
+### 저장해야 하는 사실
+
+| 사실 | 엔티티 |
+|---|---|
+| 회사의 한 달을 정산해야 한다. | `SettlementJob` |
+| 정산 작업을 한 번 시도했다. | `SettlementAttempt` |
+| 재계산 결과와 예상 결과를 비교했다. | `SettlementValidation` |
+| 검증된 월간 금액이 확정됐다. | `MonthlySettlement` |
+
+`BillingMonth`는 UTC 월 시작과 다음 달 시작으로 이루어진 값이며 모든 엔티티가 같은 기간을 사용한다.
+
+### 엔티티 책임
+
+| 엔티티 | 책임 | 논리 식별자 |
+|---|---|---|
+| `SettlementJob` | 회사·월 단위 정산 진행 상태 | `BillingAccountId + BillingMonth` |
+| `SettlementAttempt` | 한 번의 실행 결과와 실패 정보 | `RunId` |
+| `SettlementValidation` | 예상·재계산 금액과 차이·입력 기준 시각 | `RunId` |
+| `MonthlySettlement` | 사용자에게 공개하는 유일한 확정 금액 | `BillingAccountId + BillingMonth` |
+
+### 관계와 카디널리티
+
+```text
+BillingAccount  1 ── N SettlementJob
+SettlementJob   1 ── N SettlementAttempt
+SettlementAttempt 1 ── 0..1 SettlementValidation
+SettlementJob   1 ── 0..1 MonthlySettlement
+```
+
+- 실패한 작업은 새 `SettlementAttempt`로 재시도한다.
+- `MonthlySettlement`는 성공한 실행과 검증 결과를 참조한다.
+- 사용량과 가격은 다른 저장소의 소유 데이터이며 실행이 읽기만 한다.
+
+### 상태와 생명주기
+
+- 유예 시간과 적체 확인을 통과하면 회사·월별 `SettlementJob`을 준비한다.
+- 실행 시도는 `RUNNING`에서 `FAILED` 또는 `VALIDATED`로 끝난다.
+- 검증 성공 후 PostgreSQL 트랜잭션에서 확정 결과를 만들고 작업을 `FINALIZED`로 바꾼다.
+- 실패한 시도는 보존하며 확정되지 않은 작업만 재시도한다.
+- 확정 결과는 생성 후 변경하거나 다시 정산하지 않는다.
+
+### 불변 규칙
+
+- 같은 회사·월의 정산 작업과 확정 결과는 각각 하나만 존재한다.
+- 한 작업에는 동시에 실행 중인 시도가 하나만 존재한다.
+- 검증 결과 없는 실행은 확정 결과를 만들 수 없다.
+- 검증 차이가 0원이 아니면 확정할 수 없다.
+- `MonthlySettlement.BilledCost`는 선택된 검증의 재계산 금액과 같다.
+- 진행 중·실패·검증 전 결과는 사용자에게 공개하지 않는다.
+- 한 회사의 실패가 다른 회사의 작업 상태를 바꾸지 않는다.
+
+### 선택 근거
+
+| 선택지 | 판단 |
+|---|---|
+| 재시도할 때 실행 행을 덮어쓰기 | 실패 횟수와 원인을 잃고 동시 실행을 구분하기 어렵다. |
+| 작업과 실행 시도를 분리 | 회사·월의 단일 작업과 여러 재시도를 함께 표현한다. |
+| ClickHouse에 확정 상태도 저장 | PostgreSQL과 원자적으로 확정하기 어렵다. |
+| PostgreSQL에 확정 결과 저장 | 실행 상태와 단일 트랜잭션으로 확정할 수 있다. |
+
+### 주요 읽기·쓰기 경로
+
+| 동작 | 읽기 | 변경 |
+|---|---|---|
+| 작업 준비 | 적체 상태, `SettlementJob` | `SettlementJob` |
+| 실행 시작 | `SettlementJob` | `SettlementAttempt` |
+| 월간 재계산 | `UsageRecord`, `PriceRate` | 파생 `CalculatedCharge` |
+| 검증 | 예상 금액, 재계산 금액 | `SettlementValidation` |
+| 확정 | 검증된 실행 | `MonthlySettlement`, `SettlementJob` |
+| 월간 조회 | `MonthlySettlement` | 없음 |
+
+### 검증 시나리오
+
+- 실행 중단 후 새 시도로 재실행하면 정상 실행과 같은 금액이 확정된다.
+- 같은 회사·월 작업이 중복 실행돼도 확정 결과는 하나뿐이다.
+- 검증 차이가 있는 실행은 실패 상태와 차이를 남기고 공개되지 않는다.
+- 배치 중 사용자는 이전 확정 결과와 현재 원장 기반 예상 비용을 계속 조회한다.
+- 한 회사의 실패 작업만 재시도하고 다른 회사의 확정은 유지한다.
+
+### 물리 모델로 넘길 사항
+
+- PostgreSQL 상태 전이·유일성·동시 실행 제약
+- 작업 선점과 재시도 스케줄링 방식
+- 오류 상세와 실행 이력의 보관 기간
+- 확정 트랜잭션과 장애 지점별 복구 쿼리
+- 금액 Decimal 정밀도와 반올림 규칙
+
+## 8. 다음 영역
+
+전체 모델을 API와 품질 시나리오에 다시 연결해 누락·중복 소유권을 검증한다.
