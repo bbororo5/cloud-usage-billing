@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 rootProject.name = "cloud-usage-billing"
 
 include(
+    "libs:event-contract",
     "apps:usage-event-api",
     "apps:usage-ledger-writer",
     "apps:settlement-batch",
