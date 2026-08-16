@@ -210,22 +210,24 @@ Kafka의 재전송 사본은 새로운 `UsageEvent`가 아니다. 같은 `source
 | `UsageProducer` | 허용된 이벤트 발생기 신원과 CloudEvents 출처 | `ProducerId` |
 | `ProducerCredential` | 발생기 비밀의 해시·유효 기간·폐기 상태 | `CredentialId` |
 | `UsageEvent` | CloudEvents 식별·출처·발생 시각과 측정 묶음 | `source + id` |
-| `UsageRecord` | 서비스별 측정량과 사용 구간 | `source + id + SkuMeter` |
+| `UsageRecord` | meter별 측정량과 사용 구간 | `source + id + meter` |
 | `EventRejection` | 거부 시점·단계·사유와 식별 가능한 요청 정보 | `RejectionId` |
+| `ResourceAllocation` | 회사가 VM을 점유한 유효 구간 | `BillingAccountId + source + ValidFrom` |
 
-`UsageRecord`의 필드 의미는 FOCUS 1.4 사용량 필드를 따른다.
+`UsageRecord`는 VM의 원시 meter·수량·단위를 보존한다. FOCUS 의미는 점유·가격 결합 이후의 비용 모델에 적용한다.
 
 ### 관계와 카디널리티
 
 ```text
 UsageProducer  1 ── N ProducerCredential
 UsageProducer  1 ── N UsageEvent
-BillingAccount 1 ── N UsageEvent
+BillingAccount 1 ── N ResourceAllocation N ── 1 UsageProducer
 UsageEvent      1 ── 3 UsageRecord
 ```
 
 - 하나의 발생기는 회전을 위해 여러 자격 증명 이력을 가질 수 있다.
 - 한 이벤트는 Compute·Storage·Networking 레코드를 각각 하나씩 가진다.
+- 회사는 `[validFrom, validTo)` 동안 VM을 점유하며 종료된 이력을 삭제하지 않는다.
 - Kafka에는 같은 논리 이벤트의 전달 사본이 하나 이상 존재할 수 있다.
 - 유효 이벤트만 Kafka 수신 로그와 ClickHouse 사용량 원장으로 전달된다.
 - 거부 기록은 유효 이벤트·사용량 레코드를 만들지 않는다.
@@ -245,7 +247,7 @@ UsageEvent      1 ── 3 UsageRecord
 - 활성 상태와 유효 기간을 만족하는 발생기 자격 증명만 사용할 수 있다.
 - 발생기 비밀 원문은 저장하지 않는다.
 - `source + id`가 같으면 재전송된 동일 이벤트다.
-- 세 레코드의 `BillingAccountId`, `ResourceId`, 리전과 사용 구간은 같다.
+- 세 레코드의 `ResourceId`와 사용 구간은 같고 회사·가격 정보는 포함하지 않는다.
 - 사용 구간은 시작 포함·종료 제외이며 일반 구간은 60초다.
 - 같은 리소스의 서로 다른 논리 이벤트는 사용 구간이 겹치지 않는다.
 - 각 사용량은 0 이상의 정수이며 계약에 정의된 단위를 사용한다.
@@ -267,7 +269,7 @@ UsageEvent      1 ── 3 UsageRecord
 | 발생기 인증 | `UsageProducer`, `ProducerCredential` | 자격 증명 사용 기록 |
 | 이벤트 검증 | 인증된 발생기, 요청 CloudEvent | `EventRejection` 또는 Kafka 로그 |
 | 원장 적재 | Kafka의 `UsageEvent` | ClickHouse `UsageRecord` 추가 |
-| 예상 비용 조회 | 중복 제거된 `UsageRecord` | 없음 |
+| 예상 비용 조회 | 중복 제거된 `UsageRecord`, `ResourceAllocation` | 없음 |
 | 원본 상세 조회 | 중복 제거된 `UsageRecord` | 없음 |
 | 월간 검증 | 해당 월의 `UsageRecord` | 없음 |
 
@@ -278,7 +280,7 @@ UsageEvent      1 ── 3 UsageRecord
 - 같은 `source + id`를 반복 전달해도 사용량 합계가 변하지 않는다.
 - 순서가 바뀌어 도착해도 `ChargePeriodStart/End` 기준 결과가 같다.
 - 세 레코드 중 하나가 없거나 단위가 틀린 이벤트는 원장에 들어가지 않는다.
-- 다른 회사 범위에서는 동일 `ResourceId`의 레코드가 조회되지 않는다.
+- 사용 구간과 겹치는 점유 관계가 없는 레코드는 비용에 반영하지 않고 품질 오류로 처리한다.
 - Kafka 소비 중단 후 재개해도 정상 처리 결과와 같다.
 
 ### 물리 모델로 넘길 사항
@@ -499,9 +501,10 @@ UsageRecord + PriceRate ── CalculatedCharge (파생)
 
 | 식별자 | 연결 범위 |
 |---|---|
-| `BillingAccountId` | 소속·사용량·감사·정산의 동일 회사 범위 |
+| `BillingAccountId` | 소속·VM 점유·감사·정산의 동일 회사 범위 |
+| `source` | VM 발생기·원시 사용량·점유 이력 연결 |
 | `source + id` | Kafka 재전송과 ClickHouse 논리 이벤트 중복 판정 |
-| `source + id + SkuMeter` | 이벤트 안의 서비스별 사용량 레코드 |
+| `source + id + meter` | 이벤트 안의 meter별 사용량 레코드 |
 | `SkuId` | 사용량과 가격 정책 |
 | `PriceRateId` | 계산 금액과 적용 가격 버전 |
 | `BillingAccountId + BillingMonth` | 회사별 월간 작업과 확정 결과 |
@@ -537,7 +540,7 @@ UsageRecord + PriceRate ── CalculatedCharge (파생)
 |---|---|
 | 중복·지연·재계산 | 논리 이벤트 식별자, 사용 구간, 가격 버전 |
 | 배치 실패·재시도 | 단일 월간 작업, 복수 실행 시도, 단일 확정 결과 |
-| 테넌트·역할 격리 | 소속별 역할과 전 영역의 `BillingAccountId` |
+| 테넌트·역할 격리 | 소속별 역할과 사용 시점의 `ResourceAllocation` |
 | 권한 변경 즉시 반영 | 사용자만 식별하는 세션과 현재 소속 조회 |
 | 추적 가능성 | 예상 금액은 `UsageRecord + PriceRate`, 확정 금액은 `MonthlySettlement + RunId`로 근거 추적 |
 | 조회 성능 | 물리 모델의 파티션·정렬·쿼리로 검증 |
@@ -550,14 +553,14 @@ UsageRecord + PriceRate ── CalculatedCharge (파생)
 | `FR-03`, `FR-04` | 사용량·가격 버전·파생 비용 |
 | `FR-05` | 월간 작업·실행·검증·확정 |
 | `FR-06`~`FR-08`, `FR-10`, `FR-12` | 사용자·소속·역할·세션·감사 |
-| `FR-09` | 전 영역의 단일 `BillingAccountId` |
+| `FR-09` | VM source와 시간 구간을 가진 회사 점유 이력 |
 | `FR-11` | 영속 모델 추가 없이 API 계약을 사용하는 웹 화면 |
 | `FR-13` | 서비스별 사용량 레코드와 조회 조건 |
 | `QS-01`, `QS-02` | 논리 이벤트 식별과 사용 구간 |
 | `QS-03` | Kafka 수신 로그와 물리 처리량 검증 |
 | `QS-04`, `QS-13` | ClickHouse 물리 모델과 부하 검증 |
 | `QS-05`, `QS-06` | 실행 시도·단일 확정·가격 버전 |
-| `QS-07` | 소속과 전 데이터의 `BillingAccountId` |
+| `QS-07` | 소속과 점유 이력으로 제한한 ClickHouse 조회 |
 | `QS-08`, `QS-09` | 계산 연결과 `dataAsOf` 의미 |
 | `QS-10`, `QS-11` | 현재 역할 조회·세션 폐기·감사 |
 | `QS-12` | 진행 결과 비공개와 배치·조회 부하 격리 검증 |
@@ -566,7 +569,7 @@ UsageRecord + PriceRate ── CalculatedCharge (파생)
 
 | 저장소 | 논리 모델 |
 |---|---|
-| PostgreSQL | 사용자·소속·세션·감사·발생기 자격 증명·가격·배치·확정 |
+| PostgreSQL | 사용자·소속·세션·감사·VM 점유 이력·발생기 자격 증명·가격·배치·확정 |
 | Kafka | 검증된 `UsageEvent` 수신 로그 |
 | ClickHouse | 서비스별 `UsageRecord`와 재생성 가능한 가격 사본 |
 

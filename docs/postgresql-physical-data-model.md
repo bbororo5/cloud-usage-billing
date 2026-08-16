@@ -1,5 +1,7 @@
 # PostgreSQL Physical Data Model
 
+> 상태: ADR-008의 회사–VM 점유 이력 모델 반영 대기. 인증·가격·정산 모델은 유지한다.
+
 ## 1. 목적
 
 논리 모델의 인증·소속·가격·정산 규칙을 PostgreSQL의 키, 제약, 인덱스와 RLS로 강제한다.

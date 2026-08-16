@@ -2,7 +2,7 @@
 
 ## 상태
 
-승인
+부분 재검토 — PostgreSQL RBAC 결정은 유지, ClickHouse 격리는 ADR-008 후속 논의 대기
 
 ## 배경
 
@@ -47,7 +47,7 @@ ClickHouse Row Policy를 테넌트마다 적용하려면 사용자·역할과 �
 
 ## 결정
 
-PostgreSQL과 ClickHouse는 공유 테이블을 사용하며 모든 테넌트 데이터에 `tenantId`를 필수로 저장한다. 이는 이벤트와 FOCUS 필드의 `BillingAccountId`와 같은 논리 식별자다.
+PostgreSQL과 ClickHouse는 공유 테이블을 사용한다. PostgreSQL의 비용·정산 데이터에는 `tenantId`를 필수로 저장한다. ADR-008에 따라 ClickHouse 원시 사용량에는 회사 식별자를 저장하지 않으며, 조회 시 점유 이력으로 회사 범위를 강제하는 방식은 후속 결정한다.
 
 - BFF는 현재 사용자 소속과 역할을 확인해 Spring Security의 `SecurityContext`를 구성한다.
 - `SecurityContextHolder`의 ThreadLocal은 동기 사용자 요청에서만 사용한다.
@@ -56,7 +56,7 @@ PostgreSQL과 ClickHouse는 공유 테이블을 사용하며 모든 테넌트 �
 - 클라이언트가 보낸 `tenantId`는 데이터 범위 결정에 사용하지 않는다.
 - PostgreSQL은 애플리케이션 검사와 RLS를 함께 적용한다. BFF 계정은 테이블 소유자와 `BYPASSRLS` 권한을 갖지 않는다.
 - ClickHouse는 테넌트 없는 조회 API와 임의 SQL 접근을 제공하지 않는다. BFF는 읽기 전용 계정을 사용하고 수집·배치 계정과 분리한다.
-- Kafka 처리는 이벤트의 `BillingAccountId`, 월간 배치는 작업의 `tenantId`를 명시적으로 사용하며 사용자 SecurityContext를 전파하지 않는다.
+- Kafka 처리는 VM `source`를 유지한다. 월간 배치는 작업의 `tenantId`와 사용 시점의 점유 이력을 명시적으로 사용하며 사용자 SecurityContext를 전파하지 않는다.
 - 캐시 키와 실행·감사 기록에도 `tenantId`를 포함한다.
 
 인증되지 않은 요청은 401, 자기 회사에서 역할이 부족한 요청은 403으로 응답한다. 다른 회사 리소스는 테넌트 범위 안에서 조회되지 않은 것으로 처리해 존재하지 않는 리소스와 동일하게 404로 응답한다.

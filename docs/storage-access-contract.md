@@ -1,5 +1,7 @@
 # Storage Access Contract
 
+> 상태: ADR-008 반영 대기. 아래 회사 기반 ClickHouse 접근은 테넌트 격리 후속 결정 전의 기존 계약이다.
+
 ## 1. 목적
 
 PostgreSQL·Kafka·ClickHouse 사이에서 데이터가 언제 안전하게 기록되고, 어떤 범위와 규칙으로 읽히는지 정의한다.
@@ -24,7 +26,7 @@ PostgreSQL·Kafka·ClickHouse 사이에서 데이터가 언제 안전하게 기�
 
 ```text
 발생기 인증·계약 검증
-→ Kafka에 BillingAccountId + ResourceId를 key로 기록
+→ Kafka에 CloudEvents source를 key로 기록
 → broker 내구성 ACK 후 202
 → consumer가 이벤트를 서비스별 3행으로 변환
 → ClickHouse batch insert 성공
@@ -32,7 +34,7 @@ PostgreSQL·Kafka·ClickHouse 사이에서 데이터가 언제 안전하게 기�
 ```
 
 - 재시작·재시도로 같은 전달이 다시 적재될 수 있다.
-- 원장은 Kafka topic·partition·offset을 보존하고, 조회는 논리 키별 최신 offset을 선택한다.
+- 원장은 회사 정보 없이 VM source와 Kafka topic·partition·offset을 보존하고, 조회는 논리 키별 전달 사본을 하나로 취급한다.
 - 동일 논리 키의 `payload_hash`가 둘 이상이면 계산하지 않고 데이터 이상으로 처리한다.
 - ClickHouse 실패 중에는 offset을 진행하지 않아 Kafka에서 복구한다.
 

@@ -17,7 +17,7 @@
 |---|---|---|
 | 수신 이벤트 로그 | 이벤트 접수 | Kafka |
 | 거부 이벤트와 사유 | 이벤트 접수 | 저장 방식은 물리 모델에서 결정 |
-| 유효 사용량 원장 | 사용량 원장 | ClickHouse |
+| VM별 원시 사용량 원장 | 사용량 원장 | ClickHouse |
 | ClickHouse 적재 offset | 사용량 원장 | Kafka consumer group |
 | 가격표·가격 버전 | 비용 계산 규칙 | PostgreSQL |
 | 가격 조회 사본 | 비용 계산 규칙 | ClickHouse, 재생성 가능 |
@@ -29,6 +29,7 @@
 | 비밀번호 해시·사용자 세션 | 인증 | PostgreSQL |
 | 역할 변경·접근 거부 이력 | 사용자·접근 통제 | PostgreSQL |
 | 발생기 신원·자격 증명 해시와 상태 | 이벤트 접수 | PostgreSQL |
+| 회사–VM 점유 구간 | 사용량 귀속 | PostgreSQL |
 
 ## 4. 사용량과 비용 흐름
 
@@ -36,16 +37,17 @@
 CloudEvent → Kafka 수신 로그
            → ClickHouse 유효 사용량 원장
 
-ClickHouse 사용량 + PostgreSQL 가격의 조회 사본
+ClickHouse 원시 사용량 + PostgreSQL 회사–VM 점유 이력 + 가격 조회 사본
            → 현재 예상 비용
 
-ClickHouse 사용량 + 가격
+ClickHouse 원시 사용량 + 회사–VM 점유 이력 + 가격
            → 월간 검증
            → PostgreSQL 확정 금액
 ```
 
 - Kafka는 보관 기간 동안 접수·복구의 정답이다.
-- ClickHouse는 장기 유효 사용량과 계산 근거의 정답이다.
+- ClickHouse는 회사와 무관한 장기 원시 사용량의 정답이다.
+- PostgreSQL은 사용 시점의 회사–VM 점유 관계의 정답이다.
 - PostgreSQL은 가격 정책과 확정 상태의 정답이다.
 - ClickHouse가 월간 금액을 계산해도 확정 여부는 월간 정산만 결정한다.
 
@@ -53,5 +55,5 @@ ClickHouse 사용량 + 가격
 
 - 거부 이벤트는 PostgreSQL에 payload 없이 저장한다. 보관 기간은 운영 측정 후 정한다.
 - PostgreSQL 가격 export를 ClickHouse 버전 사본으로 동기화한다.
-- ClickHouse는 사용 시작 월로 파티션하고 회사·일·서비스·리소스·시각 순으로 정렬한다.
+- ClickHouse는 사용 시작 월로 파티션하고 VM 출처·meter·시각 중심으로 정렬한다.
 - Kafka 파티션 수·복제 수·보관 기간은 로컬 환경과 성능 검증 환경에서 각각 확정한다.

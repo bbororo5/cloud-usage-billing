@@ -1,5 +1,7 @@
 # Event Contract v1
 
+> 상태: 교체 예정. ADR-008에 따라 VM 입력에서 회사·SKU 필드를 제거하는 v2 계약을 테넌트 격리 논의 후 확정한다. 현재 문서는 기존 구현 기준이며 새 설계의 정답이 아니다.
+
 ## 1. 목적
 
 인스턴스의 1분 사용량을 CloudEvents 형식으로 전달하고, FOCUS 용어로 Compute·Storage·Network 사용량을 표현한다.
