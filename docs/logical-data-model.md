@@ -198,8 +198,11 @@ User           1 ── 0..N RoleChangeAudit  : target
 | 사용량을 발행할 수 있는 시스템 신원이 존재한다. | `UsageProducer` |
 | 발생기 자격 증명의 유효 상태를 관리한다. | `ProducerCredential` |
 | 특정 출처에서 사용량 이벤트가 발생했다. | `UsageEvent` |
-| 이벤트에 세 종류의 측정 사용량이 포함됐다. | `UsageRecord` |
+| 이벤트에 세 종류의 원시 측정 사용량이 포함됐다. | `RawUsageRecord` |
 | 이벤트가 계약을 위반해 거부됐다. | `EventRejection` |
+| 회사가 VM을 점유한 유효 구간 이력을 관리한다. | `ResourceAllocation` |
+| 점유 이력으로 사용량이 특정 회사에 귀속됐다. | `AttributedUsageRecord` |
+| 점유 이력을 찾지 못하거나 중복 점유되어 귀속에 실패했다. | `AttributionError` |
 
 Kafka의 재전송 사본은 새로운 `UsageEvent`가 아니다. 같은 `source + id`는 동일한 논리 이벤트다.
 
@@ -210,36 +213,43 @@ Kafka의 재전송 사본은 새로운 `UsageEvent`가 아니다. 같은 `source
 | `UsageProducer` | 허용된 이벤트 발생기 신원과 CloudEvents 출처 | `ProducerId` |
 | `ProducerCredential` | 발생기 비밀의 해시·유효 기간·폐기 상태 | `CredentialId` |
 | `UsageEvent` | CloudEvents 식별·출처·발생 시각과 측정 묶음 | `source + id` |
-| `UsageRecord` | meter별 측정량과 사용 구간 | `source + id + meter` |
+| `RawUsageRecord` | meter별 원시 측정량과 사용 구간 (테넌트 비인지) | `source + id + meter` |
 | `EventRejection` | 거부 시점·단계·사유와 식별 가능한 요청 정보 | `RejectionId` |
 | `ResourceAllocation` | 회사가 VM을 점유한 유효 구간 | `BillingAccountId + source + ValidFrom` |
+| `AttributedUsageRecord` | 회사에 귀속 완료된 사용량 레코드 (조회 모델) | `BillingAccountId + source + id + meter` |
+| `AttributionError` | 미귀속·중복 귀속으로 격리된 사용량 오류 | `ErrorId` |
 
-`UsageRecord`는 VM의 원시 meter·수량·단위를 보존한다. FOCUS 의미는 점유·가격 결합 이후의 비용 모델에 적용한다.
+`RawUsageRecord`는 VM의 원시 meter·수량·단위를 보존한다. FOCUS 의미와 회사 식별자는 점유 이력(`ResourceAllocation`) 및 가격 결합 이후의 `AttributedUsageRecord`와 비용 모델에 적용한다.
 
 ### 관계와 카디널리티
 
 ```text
 UsageProducer  1 ── N ProducerCredential
 UsageProducer  1 ── N UsageEvent
+UsageEvent      1 ── 3 RawUsageRecord
+
 BillingAccount 1 ── N ResourceAllocation N ── 1 UsageProducer
-UsageEvent      1 ── 3 UsageRecord
+RawUsageRecord + ResourceAllocation ── 1 AttributedUsageRecord (귀속 성공 시)
+                                    └── 1 AttributionError     (귀속 실패 시)
 ```
 
 - 하나의 발생기는 회전을 위해 여러 자격 증명 이력을 가질 수 있다.
-- 한 이벤트는 Compute·Storage·Networking 레코드를 각각 하나씩 가진다.
+- 한 이벤트는 Compute·Storage·Networking 원시 레코드를 각각 하나씩 가진다.
 - 회사는 `[validFrom, validTo)` 동안 VM을 점유하며 종료된 이력을 삭제하지 않는다.
 - Kafka에는 같은 논리 이벤트의 전달 사본이 하나 이상 존재할 수 있다.
-- 유효 이벤트만 Kafka 수신 로그와 ClickHouse 사용량 원장으로 전달된다.
-- 거부 기록은 유효 이벤트·사용량 레코드를 만들지 않는다.
+- 유효 이벤트만 Kafka 수신 로그와 ClickHouse 원시 원장으로 전달된다.
+- 거부 기록은 유효 이벤트·원시 사용량 레코드를 만들지 않는다.
+- 점유 구간과 일치하지 않는 원시 레코드는 `AttributionError`로 격리되며 조회·정산에서 차단된다.
 
 ### 상태와 생명주기
 
 - 발생기 자격 증명은 발급 후 활성화되고 만료·회전·폐기로 효력을 잃는다.
 - 요청은 계약 검증 후 거부되거나 Kafka에 내구성 있게 기록된다.
-- Kafka 소비자는 이벤트를 세 사용량 레코드로 풀어 ClickHouse에 추가한다.
-- 유효 이벤트와 사용량 레코드는 수정하지 않는다.
+- Kafka 소비자는 이벤트를 세 원시 사용량 레코드로 풀어 ClickHouse 원시 원장에 추가한다.
+- 유효 이벤트와 원시 사용량 레코드는 수정하지 않는다.
 - 지연 이벤트도 열린 월의 원장에 원래 사용 구간으로 추가한다.
-- Kafka 보관 종료 후에도 ClickHouse 사용량 원장은 유지된다.
+- Kafka 보관 종료 후에도 ClickHouse 원시 원장은 유지된다.
+- 점유 이력으로 귀속된 `AttributedUsageRecord`가 생성/갱신되며, BFF는 이 귀속 모델만 조회한다.
 
 ### 불변 규칙
 
@@ -251,15 +261,17 @@ UsageEvent      1 ── 3 UsageRecord
 - 사용 구간은 시작 포함·종료 제외이며 일반 구간은 60초다.
 - 같은 리소스의 서로 다른 논리 이벤트는 사용 구간이 겹치지 않는다.
 - 각 사용량은 0 이상의 정수이며 계약에 정의된 단위를 사용한다.
-- 물리적으로 중복 적재돼도 하나의 논리 `UsageRecord`로만 계산한다.
+- 물리적으로 중복 적재돼도 하나의 논리 `RawUsageRecord`로만 계산한다.
+- 미귀속(`AttributionError`) 사용량이 존재하는 월은 월간 확정을 수행할 수 없다.
 
 ### 선택 근거
 
 | 선택지 | 판단 |
 |---|---|
+| 수신 시점에 회사·SKU 보강 | 점유 매핑 장애가 수집을 막고 과거 점유 변경을 유연하게 처리하지 못한다. |
+| 원시 사용량과 후행 귀속 분리 | VM 계약이 단순해지고 수집 내구성과 점유 이력 정확성을 동시에 달성한다. |
 | ClickHouse에 CloudEvent 묶음만 저장 | 서비스·리소스 필터마다 배열을 해체해야 한다. |
-| 사용량 레코드로 풀어 저장 | FOCUS 필드 단위 조회와 집계가 직접 가능하다. |
-| 중복 사본을 새로운 이벤트로 취급 | 재시도 횟수만큼 금액이 증가한다. |
+| 사용량 레코드로 풀어 저장 | 필드 단위 조회와 집계가 직접 가능하다. |
 | `source + id`를 논리 이벤트로 취급 | At-least-once 전달과 비용 멱등성을 함께 유지한다. |
 
 ### 주요 읽기·쓰기 경로
@@ -268,10 +280,11 @@ UsageEvent      1 ── 3 UsageRecord
 |---|---|---|
 | 발생기 인증 | `UsageProducer`, `ProducerCredential` | 자격 증명 사용 기록 |
 | 이벤트 검증 | 인증된 발생기, 요청 CloudEvent | `EventRejection` 또는 Kafka 로그 |
-| 원장 적재 | Kafka의 `UsageEvent` | ClickHouse `UsageRecord` 추가 |
-| 예상 비용 조회 | 중복 제거된 `UsageRecord`, `ResourceAllocation` | 없음 |
-| 원본 상세 조회 | 중복 제거된 `UsageRecord` | 없음 |
-| 월간 검증 | 해당 월의 `UsageRecord` | 없음 |
+| 원장 적재 | Kafka의 `UsageEvent` | ClickHouse `RawUsageRecord` 추가 |
+| 사용량 귀속 | `RawUsageRecord`, `ResourceAllocation` | `AttributedUsageRecord` 생성 또는 `AttributionError` 격리 |
+| 예상 비용 조회 | `AttributedUsageRecord`, 가격 사본 | 없음 (BFF는 원시 원장 직접 접근 불가) |
+| 원본 상세 조회 | `AttributedUsageRecord` | 없음 |
+| 월간 검증 | 해당 월의 `AttributedUsageRecord`, `AttributionError` | 없음 |
 
 ### 검증 시나리오
 
@@ -280,7 +293,7 @@ UsageEvent      1 ── 3 UsageRecord
 - 같은 `source + id`를 반복 전달해도 사용량 합계가 변하지 않는다.
 - 순서가 바뀌어 도착해도 `ChargePeriodStart/End` 기준 결과가 같다.
 - 세 레코드 중 하나가 없거나 단위가 틀린 이벤트는 원장에 들어가지 않는다.
-- 사용 구간과 겹치는 점유 관계가 없는 레코드는 비용에 반영하지 않고 품질 오류로 처리한다.
+- 사용 구간과 겹치는 점유 관계가 없는 레코드는 `AttributionError`로 격리되어 월간 확정이 차단된다.
 - Kafka 소비 중단 후 재개해도 정상 처리 결과와 같다.
 
 ### 물리 모델로 넘길 사항
@@ -316,22 +329,22 @@ UsageEvent      1 ── 3 UsageRecord
 |---|---|---|
 | `PricingSku` | 서비스·meter·사용량 단위의 과금 정의 | `SkuId` |
 | `PriceRate` | SKU의 적용 시작 시각·단가·통화 | `PriceRateId` |
-| `CalculatedCharge` | 사용량·가격 버전·계산 금액의 추적 가능한 결과 | `UsageRecordId + PriceRateId` |
+| `CalculatedCharge` | 귀속 사용량·가격 버전·계산 금액의 추적 가능한 결과 | `AttributedRecordId + PriceRateId` |
 
 ### 관계와 카디널리티
 
 ```text
 PricingSku 1 ── N PriceRate
-PricingSku 1 ── N UsageRecord
+PricingSku 1 ── N AttributedUsageRecord
 
-UsageRecord 1 ─┐
-                ├─ 1 CalculatedCharge
-PriceRate   1 ─┘
+AttributedUsageRecord 1 ─┐
+                         ├─ 1 CalculatedCharge
+PriceRate             1 ─┘
 ```
 
-- `UsageRecord.SkuId`로 과금 SKU를 찾는다.
+- `AttributedUsageRecord`의 meter·단위와 일치하는 과금 SKU를 찾는다.
 - 사용 구간을 완전히 포함하는 가격 버전 하나를 선택한다.
-- `CalculatedCharge`는 사용량과 가격 버전 양쪽을 추적한다.
+- `CalculatedCharge`는 귀속 사용량과 가격 버전 양쪽을 추적한다.
 
 ### 상태와 생명주기
 
@@ -346,7 +359,7 @@ PriceRate   1 ─┘
 - 같은 SKU의 가격 적용 구간은 겹치지 않는다.
 - 한 사용 구간에는 정확히 하나의 `PriceRate`가 적용돼야 한다.
 - 가격 경계를 가로지르는 사용 구간은 경계에서 나눠야 한다.
-- `UsageRecord.ConsumedUnit`은 `PricingSku`의 측정 단위와 같아야 한다.
+- `AttributedUsageRecord.ConsumedUnit`은 `PricingSku`의 측정 단위와 같아야 한다.
 - 단가는 0 이상이며 통화는 KRW다.
 - 가격 사본이 없거나 버전이 모호하면 금액을 0으로 계산하지 않고 실패한다.
 - 예상 조회와 월간 배치는 같은 계산 규칙을 사용한다.
@@ -366,8 +379,8 @@ PriceRate   1 ─┘
 |---|---|---|
 | 가격 등록 | `PricingSku`, 기존 `PriceRate` | 새 `PriceRate` |
 | 가격 사본 갱신 | PostgreSQL `PriceRate` | ClickHouse 가격 사본 |
-| 예상 비용 조회 | `UsageRecord`, 가격 사본 | 파생 `CalculatedCharge` |
-| 월간 검증 | `UsageRecord`, `PriceRate` | 파생 `CalculatedCharge` |
+| 예상 비용 조회 | `AttributedUsageRecord`, 가격 사본 | 파생 `CalculatedCharge` |
+| 월간 검증 | `AttributedUsageRecord`, `PriceRate` | 파생 `CalculatedCharge` |
 
 ### 검증 시나리오
 
@@ -375,7 +388,7 @@ PriceRate   1 ─┘
 - 같은 사용량과 가격 버전의 계산 결과는 실행마다 같다.
 - 가격 적용 구간이 겹치거나 비어 있으면 계산을 중단한다.
 - ClickHouse 가격 사본을 다시 만들어도 예상 비용이 달라지지 않는다.
-- 계산 결과에서 `UsageRecord`와 `PriceRate`를 모두 찾을 수 있다.
+- 계산 결과에서 `AttributedUsageRecord`와 `PriceRate`를 모두 찾을 수 있다.
 
 ### 물리 모델로 넘길 사항
 
@@ -440,6 +453,7 @@ SettlementJob   1 ── 0..1 MonthlySettlement
 - 한 작업에는 동시에 실행 중인 시도가 하나만 존재한다.
 - 검증 결과 없는 실행은 확정 결과를 만들 수 없다.
 - 검증 차이가 0원이 아니면 확정할 수 없다.
+- 해당 월에 미귀속(`AttributionError`) 사용량이 존재하면 확정할 수 없다.
 - `MonthlySettlement.BilledCost`는 선택된 검증의 재계산 금액과 같다.
 - 진행 중·실패·검증 전 결과는 사용자에게 공개하지 않는다.
 - 한 회사의 실패가 다른 회사의 작업 상태를 바꾸지 않는다.
@@ -459,8 +473,8 @@ SettlementJob   1 ── 0..1 MonthlySettlement
 |---|---|---|
 | 작업 준비 | 적체 상태, `SettlementJob` | `SettlementJob` |
 | 실행 시작 | `SettlementJob` | `SettlementAttempt` |
-| 월간 재계산 | `UsageRecord`, `PriceRate` | 파생 `CalculatedCharge` |
-| 검증 | 예상 금액, 재계산 금액 | `SettlementValidation` |
+| 월간 재계산 | `AttributedUsageRecord`, `PriceRate` | 파생 `CalculatedCharge` |
+| 검증 | 예상 금액, 재계산 금액, `AttributionError` 유무 | `SettlementValidation` |
 | 확정 | 검증된 실행 | `MonthlySettlement`, `SettlementJob` |
 | 월간 조회 | `MonthlySettlement` | 없음 |
 
@@ -468,8 +482,8 @@ SettlementJob   1 ── 0..1 MonthlySettlement
 
 - 실행 중단 후 새 시도로 재실행하면 정상 실행과 같은 금액이 확정된다.
 - 같은 회사·월 작업이 중복 실행돼도 확정 결과는 하나뿐이다.
-- 검증 차이가 있는 실행은 실패 상태와 차이를 남기고 공개되지 않는다.
-- 배치 중 사용자는 이전 확정 결과와 현재 원장 기반 예상 비용을 계속 조회한다.
+- 검증 차이가 있거나 미귀속 데이터가 있는 실행은 실패 상태를 남기고 공개되지 않는다.
+- 배치 중 사용자는 이전 확정 결과와 현재 귀속 모델 기반 예상 비용을 계속 조회한다.
 - 한 회사의 실패 작업만 재시도하고 다른 회사의 확정은 유지한다.
 
 ### 물리 모델로 넘길 사항
@@ -485,27 +499,28 @@ SettlementJob   1 ── 0..1 MonthlySettlement
 ### 관계 지도
 
 ```text
-User ── BillingMembership ── BillingAccount ── UsageEvent ── UsageRecord
-  └──── AuthenticationSession        │                         └─ PricingSku ─ PriceRate
-                                     ├─ SecurityAuditEvent
+User ── BillingMembership ── BillingAccount ── ResourceAllocation ── UsageProducer ── UsageEvent ── RawUsageRecord
+  └──── AuthenticationSession        │                                                                     │
+                                     ├─ SecurityAuditEvent                                                 │
+                                     ├─ AttributedUsageRecord ─────────────────────────────────────────────┘
+                                     │         └─ PricingSku ─ PriceRate
+                                     │                  │
+                                     │                  └─ CalculatedCharge (파생)
                                      └─ SettlementJob ── SettlementAttempt ── SettlementValidation
                                               └───────── MonthlySettlement
 
 UsageProducer ── ProducerCredential
-      └──────── UsageEvent
-
-UsageRecord + PriceRate ── CalculatedCharge (파생)
 ```
 
 ### 경계를 잇는 식별자
 
 | 식별자 | 연결 범위 |
 |---|---|
-| `BillingAccountId` | 소속·VM 점유·감사·정산의 동일 회사 범위 |
+| `BillingAccountId` | 소속·VM 점유·귀속 조회·감사·정산의 동일 회사 범위 |
 | `source` | VM 발생기·원시 사용량·점유 이력 연결 |
-| `source + id` | Kafka 재전송과 ClickHouse 논리 이벤트 중복 판정 |
-| `source + id + meter` | 이벤트 안의 meter별 사용량 레코드 |
-| `SkuId` | 사용량과 가격 정책 |
+| `source + id` | Kafka 재전송과 ClickHouse 원시 원장 논리 이벤트 중복 판정 |
+| `source + id + meter` | 이벤트 안의 meter별 원시 사용량 레코드 |
+| `SkuId` | 귀속 사용량과 가격 정책 |
 | `PriceRateId` | 계산 금액과 적용 가격 버전 |
 | `BillingAccountId + BillingMonth` | 회사별 월간 작업과 확정 결과 |
 | `RunId` | 재시도별 실행·검증·확정 근거 |
@@ -517,13 +532,13 @@ UsageRecord + PriceRate ── CalculatedCharge (파생)
 | API | 사용하는 모델 |
 |---|---|
 | 세션·내 정보 | `User`, `AuthenticationSession`, `BillingMembership`, `BillingAccount` |
-| 비용 조회 | `BillingMembership`, `UsageRecord`, `PricingSku`, `PriceRate`, 파생 `CalculatedCharge` |
+| 비용 조회 | `BillingMembership`, `AttributedUsageRecord`, `PricingSku`, `PriceRate`, 파생 `CalculatedCharge` |
 | 월간 확정 조회 | `BillingMembership`, `MonthlySettlement` |
-| 원본 사용량 조회 | `BillingMembership`, `UsageRecord` |
+| 원본 사용량 조회 | `BillingMembership`, `AttributedUsageRecord` |
 | 구성원·역할 관리 | `BillingMembership`, `User`, `SecurityAuditEvent` |
 | 이벤트 수신 | `UsageProducer`, `ProducerCredential`, `UsageEvent`, `EventRejection` |
 
-사용자 API는 `BillingAccountId`를 입력받지 않고 현재 세션의 소속에서 결정한다.
+사용자 API는 `BillingAccountId`를 입력받지 않고 현재 세션의 소속에서 결정한다. BFF는 원시 사용량 원장(`RawUsageRecord`)에 접근하지 않으며 귀속 완료된 조회 모델(`AttributedUsageRecord`)만 읽는다.
 
 ### 파생 데이터의 의미
 
@@ -540,27 +555,27 @@ UsageRecord + PriceRate ── CalculatedCharge (파생)
 |---|---|
 | 중복·지연·재계산 | 논리 이벤트 식별자, 사용 구간, 가격 버전 |
 | 배치 실패·재시도 | 단일 월간 작업, 복수 실행 시도, 단일 확정 결과 |
-| 테넌트·역할 격리 | 소속별 역할과 사용 시점의 `ResourceAllocation` |
+| 테넌트·역할 격리 | 소속별 역할과 사용 시점의 `ResourceAllocation`을 통한 후행 귀속, BFF 원시 접근 차단 |
 | 권한 변경 즉시 반영 | 사용자만 식별하는 세션과 현재 소속 조회 |
-| 추적 가능성 | 예상 금액은 `UsageRecord + PriceRate`, 확정 금액은 `MonthlySettlement + RunId`로 근거 추적 |
+| 추적 가능성 | 예상 금액은 `AttributedUsageRecord + PriceRate`, 확정 금액은 `MonthlySettlement + RunId`로 근거 추적 |
 | 조회 성능 | 물리 모델의 파티션·정렬·쿼리로 검증 |
 
 ### 요구사항 추적
 
 | 근거 | 모델 또는 후속 검증 |
 |---|---|
-| `FR-01`, `FR-02` | 발생기·이벤트·거부·사용량 원장 |
-| `FR-03`, `FR-04` | 사용량·가격 버전·파생 비용 |
-| `FR-05` | 월간 작업·실행·검증·확정 |
+| `FR-01`, `FR-02` | 발생기·이벤트·거부·원시 사용량 원장 |
+| `FR-03`, `FR-04` | 귀속 사용량·가격 버전·파생 비용 |
+| `FR-05` | 월간 작업·실행·검증·확정 (미귀속 격리 확인) |
 | `FR-06`~`FR-08`, `FR-10`, `FR-12` | 사용자·소속·역할·세션·감사 |
-| `FR-09` | VM source와 시간 구간을 가진 회사 점유 이력 |
+| `FR-09` | VM source와 시간 구간을 가진 회사 점유 이력 및 후행 귀속 |
 | `FR-11` | 영속 모델 추가 없이 API 계약을 사용하는 웹 화면 |
-| `FR-13` | 서비스별 사용량 레코드와 조회 조건 |
+| `FR-13` | 서비스별 귀속 사용량 레코드와 조회 조건 |
 | `QS-01`, `QS-02` | 논리 이벤트 식별과 사용 구간 |
 | `QS-03` | Kafka 수신 로그와 물리 처리량 검증 |
 | `QS-04`, `QS-13` | ClickHouse 물리 모델과 부하 검증 |
 | `QS-05`, `QS-06` | 실행 시도·단일 확정·가격 버전 |
-| `QS-07` | 소속과 점유 이력으로 제한한 ClickHouse 조회 |
+| `QS-07` | 점유 이력 기반 귀속 모델과 BFF 원시 접근 차단 |
 | `QS-08`, `QS-09` | 계산 연결과 `dataAsOf` 의미 |
 | `QS-10`, `QS-11` | 현재 역할 조회·세션 폐기·감사 |
 | `QS-12` | 진행 결과 비공개와 배치·조회 부하 격리 검증 |
@@ -569,8 +584,8 @@ UsageRecord + PriceRate ── CalculatedCharge (파생)
 
 | 저장소 | 논리 모델 |
 |---|---|
-| PostgreSQL | 사용자·소속·세션·감사·VM 점유 이력·발생기 자격 증명·가격·배치·확정 |
+| PostgreSQL | 사용자·소속·세션·감사·VM 점유 이력(`ResourceAllocation`)·발생기 자격 증명·가격·배치·확정·미귀속 오류(`AttributionError`) |
 | Kafka | 검증된 `UsageEvent` 수신 로그 |
-| ClickHouse | 서비스별 `UsageRecord`와 재생성 가능한 가격 사본 |
+| ClickHouse | 원시 원장(`RawUsageRecord`), 귀속 조회 모델(`AttributedUsageRecord`), 재생성 가능한 가격 사본 |
 
 논리 모델에는 정답 소유자가 둘인 데이터가 없다. 다음 단계에서는 이 모델을 PostgreSQL과 ClickHouse의 키·제약·파티션·정렬 구조로 변환한다.
