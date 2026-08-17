@@ -9,7 +9,7 @@
 | [003](0003-realtime-cost-aggregation-and-query.md) | 실시간 대시보드를 위한 비용 집계·조회 | 집계 구현 전 | 승인 |
 | [004](0004-monthly-validation-and-finalization-batch.md) | 월간 검증·확정 배치 | 정산 구현 전 | 승인 |
 | [005](0005-authentication-state-management.md) | 인증 상태 관리 | 로그인 구현 전 | 승인 |
-| [006](0006-tenant-rbac-enforcement.md) | 테넌트·RBAC 강제 방식 | 사용자 API 구현 전 | 부분 재검토 |
+| [006](0006-tenant-rbac-enforcement.md) | 테넌트·RBAC 강제 방식 | 사용자 API 구현 전 | 승인 |
 | [007](0007-usage-ledger-writer-execution-unit.md) | Kafka에서 ClickHouse로 원장을 적재하는 실행 단위 | 물리 데이터 흐름 확정 후 | 승인 |
 | [008](0008-tenant-neutral-usage-ingestion.md) | 과금 비인지 사용량 수집과 후행 귀속 | VM 이벤트 경계 재검토 후 | 승인 |
 
