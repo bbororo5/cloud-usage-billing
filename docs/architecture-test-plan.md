@@ -39,8 +39,9 @@
 |---|---|---|
 | PostgreSQL | `database/postgresql/schema_test.sql` | RLS, 마지막 Admin, 가격 구간, 실행 재시도, 단일 확정 |
 | ClickHouse | `database/clickhouse/schema_test.sql` | 전달 중복 제거, VM 출처 격리, 가격 사본 버전 |
-| 조회·배치 | `database/clickhouse/queries` | 비용·월간 총액·안정 커서 쿼리 실행 |
+| Kafka | `scripts/verify-kafka-durability.sh` | 복제 계수 3, 최소 ISR 2, 복제본 장애 중 ACK와 ISR 미달 쓰기 거부 |
+| 조회·배치 | `database/clickhouse/queries` | 귀속 조회 모델 확정 후 비용·월간 총액·안정 커서 쿼리 추가 |
 | 이벤트 계약 | `contracts/v1` | JSON Schema와 예제 일치 |
 | API 계약 | `contracts/openapi.yaml` | OpenAPI lint |
 
-단계 1에서 이 검증을 Testcontainers 기반 통합 테스트와 CI 명령으로 묶는다.
+수집 파이프라인 검증을 안정화한 뒤 Testcontainers 기반 통합 테스트와 CI 명령으로 묶는다.

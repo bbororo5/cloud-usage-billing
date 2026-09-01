@@ -9,7 +9,7 @@ spring:
     password: ${CLICKHOUSE_PASSWORD:local-dev-only}
     driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9094,localhost:9095}
     consumer:
       group-id: usage-ledger-writer-v1
       auto-offset-reset: earliest
