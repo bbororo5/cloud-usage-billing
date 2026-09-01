@@ -26,12 +26,12 @@ class KafkaUsageEventPublisherTest {
         byte[] payload = {1, 2, 3};
         CompletableFuture<SendResult<String, byte[]>> acknowledged =
                 CompletableFuture.completedFuture(mock(SendResult.class));
-        when(template.send("usage-events.v1", "tenant-001:i-1", payload))
+        when(template.send("usage-events.v1", "urn:cloud-usage:meter:generator-01", payload))
                 .thenReturn(acknowledged);
 
-        publisher.publish("tenant-001:i-1", payload);
+        publisher.publish("urn:cloud-usage:meter:generator-01", payload);
 
-        verify(template).send("usage-events.v1", "tenant-001:i-1", payload);
+        verify(template).send("usage-events.v1", "urn:cloud-usage:meter:generator-01", payload);
     }
 
     @Test

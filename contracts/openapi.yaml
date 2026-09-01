@@ -264,7 +264,7 @@ paths:
       tags: [Ingestion]
       operationId: ingestUsageEvent
       summary: 사용량 이벤트 검증 및 Kafka 내구성 기록
-      description: 발생기별 불투명 자격 증명으로 인증하고, 자격 증명의 계정·source 범위 안의 이벤트만 수신한다.
+      description: 발생기별 불투명 자격 증명으로 인증하고, 자격 증명의 source 범위 안의 이벤트만 수신한다.
       security:
         - ProducerCredential: []
       requestBody:

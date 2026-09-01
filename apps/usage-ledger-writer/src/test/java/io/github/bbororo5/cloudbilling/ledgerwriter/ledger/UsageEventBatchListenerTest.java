@@ -52,7 +52,7 @@ class UsageEventBatchListenerTest {
                 "usage-events.v1",
                 0,
                 0L,
-                "tenant-001:i-000123",
+                "urn:cloud-usage:meter:generator-01",
                 exampleBytes()
         );
     }
