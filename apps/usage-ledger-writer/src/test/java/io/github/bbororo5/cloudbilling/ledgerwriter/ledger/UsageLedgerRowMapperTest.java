@@ -37,7 +37,7 @@ class UsageLedgerRowMapperTest {
             assertThat(row.kafkaPartition()).isEqualTo(4);
             assertThat(row.kafkaOffset()).isEqualTo(99L);
             assertThat(row.payloadHash())
-                    .isEqualTo("ec9f479711f19a94f77790343e7a154139ad2cc00d55f60967b3e8debc67ee6c");
+                    .isEqualTo("ad3def079c5e060675c66ad115c94f67ca45133a417205c839bbe3f3a99c1e57");
         });
     }
 

@@ -9,44 +9,32 @@
   "dataschema": "https://raw.githubusercontent.com/bbororo5/cloud-usage-billing/main/contracts/v1/instance-usage-event.schema.json",
   "data": [
     {
-      "BillingAccountId": "tenant-001",
       "ChargePeriodStart": "2026-08-12T00:00:00Z",
       "ChargePeriodEnd": "2026-08-12T00:01:00Z",
       "RegionId": "kr-central-1",
       "ResourceId": "i-000123",
       "ResourceType": "Virtual Machine",
-      "ServiceCategory": "Compute",
-      "ServiceName": "Compute",
-      "SkuId": "compute-medium-linux",
-      "SkuMeter": "Compute Usage",
+      "Meter": "Compute Usage",
       "ConsumedQuantity": 60,
       "ConsumedUnit": "Second"
     },
     {
-      "BillingAccountId": "tenant-001",
       "ChargePeriodStart": "2026-08-12T00:00:00Z",
       "ChargePeriodEnd": "2026-08-12T00:01:00Z",
       "RegionId": "kr-central-1",
       "ResourceId": "i-000123",
       "ResourceType": "Virtual Machine",
-      "ServiceCategory": "Storage",
-      "ServiceName": "Block Storage",
-      "SkuId": "storage-block-standard",
-      "SkuMeter": "Block Volume Usage",
+      "Meter": "Block Volume Usage",
       "ConsumedQuantity": 6000,
       "ConsumedUnit": "GiB-Second"
     },
     {
-      "BillingAccountId": "tenant-001",
       "ChargePeriodStart": "2026-08-12T00:00:00Z",
       "ChargePeriodEnd": "2026-08-12T00:01:00Z",
       "RegionId": "kr-central-1",
       "ResourceId": "i-000123",
       "ResourceType": "Virtual Machine",
-      "ServiceCategory": "Networking",
-      "ServiceName": "Network",
-      "SkuId": "network-internet-egress",
-      "SkuMeter": "Data Transfer",
+      "Meter": "Data Transfer",
       "ConsumedQuantity": 1048576,
       "ConsumedUnit": "Byte"
     }

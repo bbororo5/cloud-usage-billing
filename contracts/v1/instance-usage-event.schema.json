@@ -66,21 +66,16 @@
     "baseRecord": {
       "type": "object",
       "required": [
-        "BillingAccountId",
         "ChargePeriodStart",
         "ChargePeriodEnd",
         "RegionId",
         "ResourceId",
         "ResourceType",
-        "ServiceCategory",
-        "ServiceName",
-        "SkuId",
-        "SkuMeter",
+        "Meter",
         "ConsumedQuantity",
         "ConsumedUnit"
       ],
       "properties": {
-        "BillingAccountId": { "type": "string", "minLength": 1 },
         "ChargePeriodStart": { "type": "string", "format": "date-time" },
         "ChargePeriodEnd": { "type": "string", "format": "date-time" },
         "RegionId": { "const": "kr-central-1" },
@@ -96,16 +91,7 @@
         {
           "type": "object",
           "properties": {
-            "ServiceCategory": { "const": "Compute" },
-            "ServiceName": { "const": "Compute" },
-            "SkuId": {
-              "enum": [
-                "compute-small-linux",
-                "compute-medium-linux",
-                "compute-large-linux"
-              ]
-            },
-            "SkuMeter": { "const": "Compute Usage" },
+            "Meter": { "const": "Compute Usage" },
             "ConsumedUnit": { "const": "Second" }
           }
         }
@@ -119,10 +105,7 @@
         {
           "type": "object",
           "properties": {
-            "ServiceCategory": { "const": "Storage" },
-            "ServiceName": { "const": "Block Storage" },
-            "SkuId": { "const": "storage-block-standard" },
-            "SkuMeter": { "const": "Block Volume Usage" },
+            "Meter": { "const": "Block Volume Usage" },
             "ConsumedUnit": { "const": "GiB-Second" }
           }
         }
@@ -136,10 +119,7 @@
         {
           "type": "object",
           "properties": {
-            "ServiceCategory": { "const": "Networking" },
-            "ServiceName": { "const": "Network" },
-            "SkuId": { "const": "network-internet-egress" },
-            "SkuMeter": { "const": "Data Transfer" },
+            "Meter": { "const": "Data Transfer" },
             "ConsumedUnit": { "const": "Byte" }
           }
         }

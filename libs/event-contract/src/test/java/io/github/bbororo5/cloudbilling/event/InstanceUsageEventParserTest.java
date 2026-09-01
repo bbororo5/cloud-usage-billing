@@ -23,8 +23,8 @@ class InstanceUsageEventParserTest {
         assertThat(event.source().toString())
                 .isEqualTo("urn:cloud-usage:meter:generator-01");
         assertThat(event.records()).hasSize(3);
-        assertThat(event.records()).extracting(UsageRecord::serviceCategory)
-                .containsExactlyInAnyOrder("Compute", "Storage", "Networking");
+        assertThat(event.records()).extracting(UsageRecord::meter)
+                .containsExactlyInAnyOrder("Compute Usage", "Block Volume Usage", "Data Transfer");
     }
 
     @Test
@@ -46,12 +46,12 @@ class InstanceUsageEventParserTest {
     }
 
     @Test
-    void rejectsDifferentBillingAccountsAtSemanticStage() throws Exception {
+    void rejectsBillingFieldsAtSchemaStage() throws Exception {
         JsonNode root = exampleNode();
-        ((com.fasterxml.jackson.databind.node.ObjectNode) root.path("data").get(1))
-                .put("BillingAccountId", "tenant-002");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) root.path("data").get(0))
+                .put("BillingAccountId", "tenant-001");
 
-        assertStage(root, ValidationStage.SEMANTIC);
+        assertStage(root, ValidationStage.SCHEMA);
     }
 
     @Test

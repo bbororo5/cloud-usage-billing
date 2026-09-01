@@ -39,7 +39,7 @@ class UsageLedgerRowMapper {
                 record.regionId(),
                 record.resourceId(),
                 record.resourceType(),
-                record.skuMeter(),
+                record.meter(),
                 record.consumedQuantity(),
                 record.consumedUnit(),
                 payloadHash,

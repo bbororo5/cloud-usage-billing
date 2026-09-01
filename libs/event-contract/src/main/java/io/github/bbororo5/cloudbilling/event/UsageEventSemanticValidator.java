@@ -42,7 +42,7 @@ final class UsageEventSemanticValidator {
         }
 
         event.records().stream()
-                .filter(record -> record.serviceCategory().equals("Compute"))
+                .filter(record -> record.meter().equals("Compute Usage"))
                 .findFirst()
                 .filter(record -> record.consumedQuantity() != durationMillis / 1_000)
                 .ifPresent(record -> violations.add("COMPUTE_QUANTITY_PERIOD_MISMATCH"));
@@ -51,8 +51,7 @@ final class UsageEventSemanticValidator {
     }
 
     private boolean sameScope(UsageRecord first, UsageRecord other) {
-        return first.billingAccountId().equals(other.billingAccountId())
-                && first.chargePeriodStart().toInstant().equals(other.chargePeriodStart().toInstant())
+        return first.chargePeriodStart().toInstant().equals(other.chargePeriodStart().toInstant())
                 && first.chargePeriodEnd().toInstant().equals(other.chargePeriodEnd().toInstant())
                 && first.regionId().equals(other.regionId())
                 && first.resourceId().equals(other.resourceId())
