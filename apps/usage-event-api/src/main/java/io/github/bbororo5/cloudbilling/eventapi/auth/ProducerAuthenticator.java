@@ -54,7 +54,6 @@ public class ProducerAuthenticator {
         }
 
         return new AuthenticatedProducer(
-                credential.billingAccountId(),
                 credential.producerId(),
                 credential.source()
         );

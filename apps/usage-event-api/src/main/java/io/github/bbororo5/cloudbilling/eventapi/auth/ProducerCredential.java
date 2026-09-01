@@ -7,7 +7,6 @@ import java.util.UUID;
 record ProducerCredential(
         UUID credentialId,
         String secretHash,
-        String billingAccountId,
         String producerId,
         URI source,
         String producerStatus,

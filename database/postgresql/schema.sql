@@ -181,14 +181,10 @@ create index security_audit_target_idx
     where target_user_id is not null;
 
 create table billing.usage_producer (
-    billing_account_id text not null,
-    producer_id text not null,
+    producer_id text primary key,
     source text not null,
     status text not null default 'ACTIVE',
     created_at timestamptz not null default now(),
-    primary key (billing_account_id, producer_id),
-    constraint usage_producer_account_fk foreign key (billing_account_id)
-        references billing.billing_account (billing_account_id),
     constraint usage_producer_id_not_blank check (btrim(producer_id) <> ''),
     constraint usage_producer_source_not_blank check (btrim(source) <> ''),
     constraint usage_producer_source_matches_id check (
@@ -200,7 +196,6 @@ create table billing.usage_producer (
 
 create table billing.producer_credential (
     credential_id uuid primary key,
-    billing_account_id text not null,
     producer_id text not null,
     secret_hash text not null,
     valid_from timestamptz not null,
@@ -208,8 +203,8 @@ create table billing.producer_credential (
     revoked_at timestamptz,
     last_used_at timestamptz,
     created_at timestamptz not null default now(),
-    constraint producer_credential_producer_fk foreign key (billing_account_id, producer_id)
-        references billing.usage_producer (billing_account_id, producer_id),
+    constraint producer_credential_producer_fk foreign key (producer_id)
+        references billing.usage_producer (producer_id),
     constraint producer_credential_secret_hash_not_blank check (btrim(secret_hash) <> ''),
     constraint producer_credential_period_valid check (expires_at > valid_from),
     constraint producer_credential_revoked_valid check (
@@ -218,24 +213,18 @@ create table billing.producer_credential (
 );
 
 create index producer_credential_producer_idx
-    on billing.producer_credential (billing_account_id, producer_id);
+    on billing.producer_credential (producer_id);
 
 create table billing.event_rejection (
     rejection_id uuid primary key,
-    billing_account_id text,
     producer_id text,
     event_source text,
     event_id text,
     rejection_stage text not null,
     reason_code text not null,
     received_at timestamptz not null default now(),
-    constraint event_rejection_account_fk foreign key (billing_account_id)
-        references billing.billing_account (billing_account_id),
-    constraint event_rejection_producer_fk foreign key (billing_account_id, producer_id)
-        references billing.usage_producer (billing_account_id, producer_id),
-    constraint event_rejection_producer_scope_valid check (
-        producer_id is null or billing_account_id is not null
-    ),
+    constraint event_rejection_producer_fk foreign key (producer_id)
+        references billing.usage_producer (producer_id),
     constraint event_rejection_stage_valid check (
         rejection_stage in ('AUTHENTICATION', 'ENVELOPE', 'SCHEMA', 'SEMANTIC')
     ),
@@ -244,11 +233,8 @@ create table billing.event_rejection (
 
 create index event_rejection_received_at_idx
     on billing.event_rejection (received_at desc);
-create index event_rejection_account_time_idx
-    on billing.event_rejection (billing_account_id, received_at desc)
-    where billing_account_id is not null;
 create index event_rejection_producer_idx
-    on billing.event_rejection (billing_account_id, producer_id)
+    on billing.event_rejection (producer_id, received_at desc)
     where producer_id is not null;
 
 create table billing.pricing_sku (

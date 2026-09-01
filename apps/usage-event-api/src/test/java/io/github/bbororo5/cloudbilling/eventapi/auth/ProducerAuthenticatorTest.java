@@ -34,8 +34,8 @@ class ProducerAuthenticatorTest {
 
         AuthenticatedProducer producer = authenticator.authenticate(bearer(SECRET));
 
-        assertThat(producer.billingAccountId()).isEqualTo("tenant-001");
         assertThat(producer.producerId()).isEqualTo("generator-01");
+        assertThat(producer.source()).isEqualTo(URI.create("urn:cloud-usage:meter:generator-01"));
     }
 
     @Test
@@ -56,7 +56,6 @@ class ProducerAuthenticatorTest {
         ProducerCredential expired = new ProducerCredential(
                 CREDENTIAL_ID,
                 ProducerAuthenticator.hashSecretForStorage(SECRET),
-                "tenant-001",
                 "generator-01",
                 URI.create("urn:cloud-usage:meter:generator-01"),
                 "ACTIVE",
@@ -81,7 +80,6 @@ class ProducerAuthenticatorTest {
         return new ProducerCredential(
                 CREDENTIAL_ID,
                 ProducerAuthenticator.hashSecretForStorage(SECRET),
-                "tenant-001",
                 "generator-01",
                 URI.create("urn:cloud-usage:meter:generator-01"),
                 "ACTIVE",

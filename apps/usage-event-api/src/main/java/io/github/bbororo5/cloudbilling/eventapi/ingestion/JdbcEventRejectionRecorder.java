@@ -25,21 +25,21 @@ class JdbcEventRejectionRecorder implements EventRejectionRecorder {
         jdbcClient.sql("""
                         insert into billing.event_rejection (
                             rejection_id,
-                            billing_account_id,
                             producer_id,
+                            event_source,
                             rejection_stage,
                             reason_code
                         ) values (
                             :rejection_id,
-                            :billing_account_id,
                             :producer_id,
+                            :event_source,
                             :rejection_stage,
                             :reason_code
                         )
                         """)
                 .param("rejection_id", UuidCreator.getTimeOrderedEpoch())
-                .param("billing_account_id", producer == null ? null : producer.billingAccountId(), Types.VARCHAR)
                 .param("producer_id", producer == null ? null : producer.producerId(), Types.VARCHAR)
+                .param("event_source", producer == null ? null : producer.source().toString(), Types.VARCHAR)
                 .param("rejection_stage", stage.name())
                 .param("reason_code", reasonCode)
                 .update();

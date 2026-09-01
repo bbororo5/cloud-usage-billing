@@ -30,14 +30,14 @@ class IngestUsageEventServiceTest {
     );
 
     @Test
-    void publishesTheOriginalPayloadUsingTenantAndResourceAsThePartitionKey() {
+    void publishesTheOriginalPayloadUsingSourceAsThePartitionKey() {
         byte[] payload = exampleBytes();
         AuthenticatedProducer producer = producer("urn:cloud-usage:meter:generator-01");
         when(authenticator.authenticate("credential")).thenReturn(producer);
 
         service.ingest("credential", payload);
 
-        verify(publisher).publish("tenant-001:i-000123", payload);
+        verify(publisher).publish("urn:cloud-usage:meter:generator-01", payload);
         verify(rejectionRecorder, never()).record(
                 org.mockito.ArgumentMatchers.any(),
                 org.mockito.ArgumentMatchers.any(),
@@ -82,7 +82,7 @@ class IngestUsageEventServiceTest {
     }
 
     private AuthenticatedProducer producer(String source) {
-        return new AuthenticatedProducer("tenant-001", "generator-01", URI.create(source));
+        return new AuthenticatedProducer("generator-01", URI.create(source));
     }
 
     private byte[] exampleBytes() {

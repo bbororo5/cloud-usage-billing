@@ -21,7 +21,6 @@ class JdbcProducerCredentialRepository implements ProducerCredentialRepository {
         return jdbcClient.sql("""
                         select c.credential_id,
                                c.secret_hash,
-                               c.billing_account_id,
                                c.producer_id,
                                p.source,
                                p.status as producer_status,
@@ -30,15 +29,13 @@ class JdbcProducerCredentialRepository implements ProducerCredentialRepository {
                                c.revoked_at
                           from billing.producer_credential c
                           join billing.usage_producer p
-                            on p.billing_account_id = c.billing_account_id
-                           and p.producer_id = c.producer_id
+                            on p.producer_id = c.producer_id
                          where c.credential_id = :credential_id
                         """)
                 .param("credential_id", credentialId)
                 .query((resultSet, rowNumber) -> new ProducerCredential(
                         resultSet.getObject("credential_id", UUID.class),
                         resultSet.getString("secret_hash"),
-                        resultSet.getString("billing_account_id"),
                         resultSet.getString("producer_id"),
                         URI.create(resultSet.getString("source")),
                         resultSet.getString("producer_status"),

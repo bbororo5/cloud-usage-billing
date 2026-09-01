@@ -1,6 +1,6 @@
 # PostgreSQL Physical Data Model
 
-> 상태: ADR-008의 회사–VM 점유 이력 모델 반영 대기. 인증·가격·정산 모델은 유지한다.
+> 상태: ADR-008의 과금 비인지 발생기 인증 반영. 회사–VM 점유 이력 모델은 단계 3에서 확정한다.
 
 ## 1. 목적
 
@@ -24,7 +24,7 @@
 | 사용자·소속 | `app_user`, `billing_account`, `billing_membership` | 사용자·회사, 회사+사용자 |
 | 사용자 세션 | `spring_session`, `spring_session_attributes` | 불투명 세션 ID |
 | 보안 증거 | `security_audit_event` | 감사 UUIDv7 |
-| 발생기 인증 | `usage_producer`, `producer_credential` | 회사+발생기, 자격 증명 UUIDv7 |
+| 발생기 인증 | `usage_producer`, `producer_credential` | 발생기, 자격 증명 UUIDv7 |
 | 거부 기록 | `event_rejection` | 거부 UUIDv7 |
 | 가격 | `pricing_sku`, `price_rate` | SKU, 가격 UUIDv7 |
 | 월간 정산 | `settlement_job`, `settlement_attempt`, `settlement_validation`, `monthly_settlement` | 회사+월, 실행 UUIDv7 |
@@ -73,7 +73,7 @@ FK는 PostgreSQL이 자동 인덱싱하지 않으므로 부모 삭제·조인 �
 - RLS 정책은 현재 사용자 본인의 소속 조회와 현재 회사 데이터만 허용한다.
 - 애플리케이션 계정은 테이블 소유자나 `BYPASSRLS` 권한을 갖지 않는다.
 - 로컬에서도 수집·BFF·배치 계정을 분리하고 필요한 테이블 권한만 부여한다.
-- 발생기 인증과 내부 배치는 사용자 세션 대신 명시적인 회사 범위를 설정한다.
+- 발생기 인증은 회사와 무관한 `source` 범위를 사용한다. 내부 배치는 명시적인 회사 범위를 설정한다.
 - 가격표와 인증 전 거부 기록은 테넌트 RLS 대상이 아니며 전용 실행 계정의 최소 권한으로 격리한다.
 
 RLS는 쿼리의 회사 조건 누락을 방어한다. 임의 SQL 실행이나 DB 계정 탈취까지 막는 경계로 간주하지 않는다.

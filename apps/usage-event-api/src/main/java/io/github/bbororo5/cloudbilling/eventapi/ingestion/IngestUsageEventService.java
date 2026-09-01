@@ -52,16 +52,12 @@ public class IngestUsageEventService {
             throw exception;
         }
 
-        if (!producer.source().equals(event.source())
-                || event.records().stream().anyMatch(record ->
-                !record.billingAccountId().equals(producer.billingAccountId()))) {
+        if (!producer.source().equals(event.source())) {
             recordSafely(producer, RejectionStage.SEMANTIC, "PRODUCER_SCOPE_MISMATCH");
             throw new ProducerScopeException();
         }
 
-        String resourceId = event.records().getFirst().resourceId();
-        String partitionKey = producer.billingAccountId() + ":" + resourceId;
-        publisher.publish(partitionKey, payload);
+        publisher.publish(event.source().toString(), payload);
     }
 
     private void recordSafely(
