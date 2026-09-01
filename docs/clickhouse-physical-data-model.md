@@ -26,8 +26,8 @@ At-least-once로 전달된 원시 사용량을 잃지 않고 저장하며, 회�
 `usage_record_delivery` 한 행은 Kafka에서 전달된 이벤트의 서비스별 레코드 하나다.
 
 - 이벤트 하나가 Compute·Storage·Networking 세 행으로 펼쳐지므로 월 8.6억 이벤트는 약 25.8억 논리 사용량 행이다.
-- 논리 레코드 키: `event_source + event_id + sku_meter`
-- 물리 전달 키: `kafka_topic + kafka_partition + kafka_offset + sku_meter`
+- 논리 레코드 키: `event_source + event_id + meter`
+- 물리 전달 키: `kafka_topic + kafka_partition + kafka_offset + meter`
 - 같은 이벤트 키(`event_source`)는 Kafka의 같은 파티션으로 라우팅한다.
 - `payload_hash`가 다른 동일 논리 키는 자동 보정하지 않고 데이터 이상으로 처리한다.
 - 원시 원장에는 `billing_account_id`를 저장하지 않으며, BFF 계정의 접근을 원천 차단한다.
@@ -52,7 +52,7 @@ At-least-once로 전달된 원시 사용량을 잃지 않고 저장하며, 회�
 | 월 누적·기간 비용 | 귀속 조회 모델의 회사·일 선두 정렬과 월 파티션 제거 |
 | 서비스 구성·추이 | 귀속 모델의 서비스 및 사용 시각 정렬 |
 | 리소스 Top N·상세 | 귀속 모델의 회사 범위 안 리소스 정렬 |
-| 원본 커서 | `charge_period_end, event_source, event_id, sku_meter` 안정 정렬 |
+| 원본 커서 | `charge_period_end, event_source, event_id, meter` 안정 정렬 |
 | 월간 재계산 | 해당 월 파티션과 점유 이력 결합 스캔 |
 
 - ClickHouse의 `ORDER BY`는 디스크 정렬과 sparse index를 결정한다.

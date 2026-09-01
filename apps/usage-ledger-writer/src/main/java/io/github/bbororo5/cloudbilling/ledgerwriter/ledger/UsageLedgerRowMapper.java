@@ -30,7 +30,6 @@ class UsageLedgerRowMapper {
             String payloadHash
     ) {
         return new UsageLedgerRow(
-                record.billingAccountId(),
                 event.source(),
                 event.id(),
                 event.time().toInstant(),
@@ -40,9 +39,6 @@ class UsageLedgerRowMapper {
                 record.regionId(),
                 record.resourceId(),
                 record.resourceType(),
-                record.serviceCategory(),
-                record.serviceName(),
-                record.skuId(),
                 record.skuMeter(),
                 record.consumedQuantity(),
                 record.consumedUnit(),

@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 record UsageLedgerRow(
-        String billingAccountId,
         URI eventSource,
         UUID eventId,
         Instant eventTime,
@@ -15,10 +14,7 @@ record UsageLedgerRow(
         String regionId,
         String resourceId,
         String resourceType,
-        String serviceCategory,
-        String serviceName,
-        String skuId,
-        String skuMeter,
+        String meter,
         long consumedQuantity,
         String consumedUnit,
         String payloadHash,

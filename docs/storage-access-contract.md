@@ -62,9 +62,9 @@ PostgreSQL 가격 export 읽기
 - 금액은 ClickHouse에서 scale 18로 계산하고 PostgreSQL 확정 시 scale 6으로 반올림한다.
 - `dataAsOf`는 선택된 논리 레코드의 최대 `charge_period_end`다.
 - 원본 첫 페이지는 `snapshot_ingested_at`을 정하고 후속 커서에 서명해 포함한다.
-- 커서 정렬 키는 `charge_period_end + source + id + sku_meter`다.
+- 커서 정렬 키는 `charge_period_end + source + id + meter`다.
 
-대표 쿼리는 [`database/clickhouse/queries`](../database/clickhouse/queries)에 둔다. 실제 API의 동적 필터·그룹은 허용 목록으로 조립하고 값은 바인딩한다.
+대표 비용 쿼리는 귀속 조회 모델의 물리 형태를 단계 3에서 확정한 뒤 [`database/clickhouse/queries`](../database/clickhouse/queries)에 추가한다. 실제 API의 동적 필터·그룹은 허용 목록으로 조립하고 값은 바인딩한다.
 
 ## 6. 월간 확정
 

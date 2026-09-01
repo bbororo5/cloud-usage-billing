@@ -14,7 +14,6 @@ class UsageLedgerRepository {
 
     private static final String INSERT_SQL = """
             insert into billing.usage_record_delivery (
-                billing_account_id,
                 event_source,
                 event_id,
                 event_time,
@@ -24,17 +23,14 @@ class UsageLedgerRepository {
                 region_id,
                 resource_id,
                 resource_type,
-                service_category,
-                service_name,
-                sku_id,
-                sku_meter,
+                meter,
                 consumed_quantity,
                 consumed_unit,
                 payload_hash,
                 kafka_topic,
                 kafka_partition,
                 kafka_offset
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -51,26 +47,22 @@ class UsageLedgerRepository {
             @Override
             public void setValues(PreparedStatement statement, int index) throws SQLException {
                 UsageLedgerRow row = rows.get(index);
-                statement.setString(1, row.billingAccountId());
-                statement.setString(2, row.eventSource().toString());
-                statement.setObject(3, row.eventId());
-                statement.setTimestamp(4, Timestamp.from(row.eventTime()));
-                statement.setString(5, row.eventSubject());
-                statement.setTimestamp(6, Timestamp.from(row.chargePeriodStart()));
-                statement.setTimestamp(7, Timestamp.from(row.chargePeriodEnd()));
-                statement.setString(8, row.regionId());
-                statement.setString(9, row.resourceId());
-                statement.setString(10, row.resourceType());
-                statement.setString(11, row.serviceCategory());
-                statement.setString(12, row.serviceName());
-                statement.setString(13, row.skuId());
-                statement.setString(14, row.skuMeter());
-                statement.setLong(15, row.consumedQuantity());
-                statement.setString(16, row.consumedUnit());
-                statement.setString(17, row.payloadHash());
-                statement.setString(18, row.kafkaTopic());
-                statement.setInt(19, row.kafkaPartition());
-                statement.setLong(20, row.kafkaOffset());
+                statement.setString(1, row.eventSource().toString());
+                statement.setObject(2, row.eventId());
+                statement.setTimestamp(3, Timestamp.from(row.eventTime()));
+                statement.setString(4, row.eventSubject());
+                statement.setTimestamp(5, Timestamp.from(row.chargePeriodStart()));
+                statement.setTimestamp(6, Timestamp.from(row.chargePeriodEnd()));
+                statement.setString(7, row.regionId());
+                statement.setString(8, row.resourceId());
+                statement.setString(9, row.resourceType());
+                statement.setString(10, row.meter());
+                statement.setLong(11, row.consumedQuantity());
+                statement.setString(12, row.consumedUnit());
+                statement.setString(13, row.payloadHash());
+                statement.setString(14, row.kafkaTopic());
+                statement.setInt(15, row.kafkaPartition());
+                statement.setLong(16, row.kafkaOffset());
             }
 
             @Override

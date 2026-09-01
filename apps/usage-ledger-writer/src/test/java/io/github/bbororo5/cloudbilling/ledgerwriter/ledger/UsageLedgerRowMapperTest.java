@@ -23,15 +23,15 @@ class UsageLedgerRowMapperTest {
                 "usage-events.v1",
                 4,
                 99L,
-                "tenant-001:i-000123",
+                "urn:cloud-usage:meter:generator-01",
                 payload
         );
 
         List<UsageLedgerRow> rows = mapper.map(event, delivery);
 
         assertThat(rows).hasSize(3);
-        assertThat(rows).extracting(UsageLedgerRow::serviceCategory)
-                .containsExactlyInAnyOrder("Compute", "Storage", "Networking");
+        assertThat(rows).extracting(UsageLedgerRow::meter)
+                .containsExactlyInAnyOrder("Compute Usage", "Block Volume Usage", "Data Transfer");
         assertThat(rows).allSatisfy(row -> {
             assertThat(row.kafkaTopic()).isEqualTo("usage-events.v1");
             assertThat(row.kafkaPartition()).isEqualTo(4);
