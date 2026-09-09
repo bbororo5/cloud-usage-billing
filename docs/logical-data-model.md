@@ -236,6 +236,7 @@ RawUsageRecord + ResourceAllocation ── 1 AttributedUsageRecord (귀속 성�
 - 하나의 발생기는 회전을 위해 여러 자격 증명 이력을 가질 수 있다.
 - 한 이벤트는 Compute·Storage·Networking 원시 레코드를 각각 하나씩 가진다.
 - 회사는 `[validFrom, validTo)` 동안 VM을 점유하며 종료된 이력을 삭제하지 않는다.
+- 점유 변경은 이전 이력을 종료하고 새 이력을 추가하며 VM별 이력 버전을 증가시킨다. 캐시는 재생성 가능한 사본이며 PostgreSQL의 소유권을 대체하지 않는다.
 - Kafka에는 같은 논리 이벤트의 전달 사본이 하나 이상 존재할 수 있다.
 - 유효 이벤트만 Kafka 수신 로그와 ClickHouse 원시 원장으로 전달된다.
 - 거부 기록은 유효 이벤트·원시 사용량 레코드를 만들지 않는다.
