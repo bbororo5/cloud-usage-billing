@@ -12,7 +12,8 @@
 | [006](0006-tenant-rbac-enforcement.md) | 테넌트·RBAC 강제 방식 | 사용자 API 구현 전 | 승인 |
 | [007](0007-usage-ledger-writer-execution-unit.md) | Kafka에서 ClickHouse로 원장을 적재하는 실행 단위 | 물리 데이터 흐름 확정 후 | 승인 |
 | [008](0008-tenant-neutral-usage-ingestion.md) | 과금 비인지 사용량 수집과 후행 귀속 | VM 이벤트 경계 재검토 후 | 승인 |
+| [009](0009-occupancy-event-recovery-and-cache-consistency.md) | 점유 변경의 Kafka 기반 복구와 캐시 일관성 | 점유 생명주기 기획 후 | 승인·구현 전 |
 
-캐시와 배포 환경은 성능 측정이나 실제 배포에서 중요한 선택이 생길 때만 ADR로 추가한다.
+점유 캐시의 일관성 원칙은 ADR-009에서 정한다. 캐시 제품과 배포 환경은 구체적인 구현 선택이 필요할 때 결정한다.
 
 ADR은 `상태 → 배경 → 요구사항 → 선택지 → 트레이드오프 분석 → 결정 → 결과`를 기본으로 하며, 선택지가 사실상 없는 경우 불필요한 목차는 생략한다.
