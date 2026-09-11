@@ -20,6 +20,7 @@
 
 ## 문서
 
+- [C2 컨테이너 다이어그램 (SVG)](docs/diagrams/c2-containers.svg) — 확정된 구성만 표시하며 점유·귀속 처리의 배치는 미정입니다.
 - [프로젝트 요구사항](docs/requirements.md)
 - [품질 시나리오](docs/quality-scenarios.md)
 - [Architecture Drivers](docs/architecture-driver.md)

@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1080" viewBox="0 0 1680 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Cloud Usage Billing — C2 컨테이너 다이어그램</title>
+  <desc id="desc">확정된 컨테이너 관계만 표시한다. 외부 발생기에서 이벤트 접수 API, Kafka, 원장 적재기, ClickHouse로 사용량이 전달된다. 사용자는 웹과 BFF를 통해 귀속 완료 데이터와 PostgreSQL의 정보를 조회한다. 월간 배치는 ClickHouse를 조회하고 PostgreSQL에 확정 결과를 기록한다. 점유·귀속 처리와 캐시 배치는 미정이다. PG와 CH는 각각 동일 저장소를 반복 표시한다.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#52657b" stroke-width="1.5"/></marker>
+    <style>
+      text { font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif; fill: #182b42; }
+      .heading { font-size: 32px; font-weight: 700; }
+      .subtitle { font-size: 17px; fill: #52657b; }
+      .name { font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .type { font-size: 15px; fill: #42607e; text-anchor: middle; }
+      .detail { font-size: 16px; text-anchor: middle; }
+      .edge { fill: none; stroke: #52657b; stroke-width: 2; marker-end: url(#arrow); }
+      .label { font-size: 15px; fill: #42576d; text-anchor: middle; paint-order: stroke; stroke: #fbfcfe; stroke-width: 7px; stroke-linejoin: round; }
+      .app { fill: #edf5ff; stroke: #507fb3; stroke-width: 1.5; }
+      .store { fill: #eef7f5; stroke: #478073; stroke-width: 1.5; }
+      .external { fill: #f2f4f7; stroke: #8290a0; stroke-width: 1.5; }
+      .note { font-size: 17px; fill: #42576d; }
+    </style>
+  </defs>
+  <rect width="1680" height="1080" fill="#fff"/>
+  <text x="42" y="58" class="heading">Cloud Usage Billing</text>
+  <text x="42" y="92" class="subtitle">C2 · Container diagram / 확정된 컨테이너 관계</text>
+  <rect x="310" y="145" width="1320" height="765" rx="12" fill="#fbfcfe" stroke="#a3b2c2" stroke-width="1.5" stroke-dasharray="7 6"/>
+  <text x="338" y="180" font-size="18" font-weight="700">클라우드 사용량 정산 시스템</text>
+
+  <!-- Container relationships. Arrows denote calls / writes; responses omitted. -->
+  <path class="edge" d="M255 295 H360"/>
+  <text class="label" x="305" y="269">HTTP</text>
+  <path class="edge" d="M590 295 H700"/>
+  <text class="label" x="645" y="263">이벤트 기록</text>
+  <path class="edge" d="M930 295 H1040"/>
+  <text class="label" x="985" y="263">이벤트 전달</text>
+  <path class="edge" d="M1270 295 H1380"/>
+  <text class="label" x="1325" y="263">원시 적재</text>
+  <path class="edge" d="M475 350 V480"/>
+  <text class="label" x="475" y="402">발생기 인증</text>
+  <text class="label" x="475" y="425">거부 이력 기록</text>
+  <path class="edge" d="M255 755 H360"/>
+  <text class="label" x="305" y="728">화면 사용</text>
+  <path class="edge" d="M590 755 H700"/>
+  <text class="label" x="645" y="728">HTTP API</text>
+  <path class="edge" d="M815 700 V590"/>
+  <text class="label" x="815" y="638">인증·권한 / 확정 조회</text>
+  <text class="label" x="815" y="660">구성원 권한 관리</text>
+  <path class="edge" d="M930 755 H1040"/>
+  <text class="label" x="985" y="711">귀속 데이터</text>
+  <text class="label" x="985" y="734">비용 조회</text>
+  <path class="edge" d="M1380 755 H1270"/>
+  <text class="label" x="1325" y="723">재계산 조회</text>
+  <path class="edge" d="M1495 700 V535 H930"/>
+  <text class="label" x="1200" y="513">정산 실행 상태 · 확정 결과 기록</text>
+
+  <!-- External actor and system. -->
+  <rect class="external" x="40" y="240" width="215" height="110" rx="8"/>
+  <text class="name" x="147" y="277">사용량 발생기</text>
+  <text class="type" x="147" y="304">외부 시스템</text>
+  <text class="detail" x="147" y="330">CloudEvents 발행</text>
+  <rect class="external" x="40" y="700" width="215" height="110" rx="8"/>
+  <text class="name" x="147" y="742">사용자</text>
+  <text class="type" x="147" y="775">Admin · Viewer</text>
+
+  <!-- Confirmed application containers. -->
+  <rect class="app" x="360" y="240" width="230" height="110" rx="8"/>
+  <text class="name" x="475" y="277">이벤트 접수 API</text>
+  <text class="type" x="475" y="304">Java 21 · Spring Boot</text>
+  <text class="detail" x="475" y="330">검증 · 내구성 기록 접수</text>
+  <rect class="store" x="700" y="240" width="230" height="110" rx="8"/>
+  <text class="name" x="815" y="277">Kafka</text>
+  <text class="type" x="815" y="304">Apache Kafka</text>
+  <text class="detail" x="815" y="330">이벤트 로그 · 재전달</text>
+  <rect class="app" x="1040" y="240" width="230" height="110" rx="8"/>
+  <text class="name" x="1155" y="277">원장 적재기</text>
+  <text class="type" x="1155" y="304">Java 21 · Spring Boot</text>
+  <text class="detail" x="1155" y="330">사용량 원시 레코드 적재</text>
+  <rect class="store" x="1380" y="240" width="230" height="110" rx="8"/>
+  <text class="name" x="1495" y="277">ClickHouse [CH]</text>
+  <text class="type" x="1495" y="304">분석 저장소</text>
+  <text class="detail" x="1495" y="330">원시 · 귀속 사용량</text>
+  <rect class="store" x="360" y="480" width="230" height="110" rx="8"/>
+  <text class="name" x="475" y="517">PostgreSQL [PG]</text>
+  <text class="type" x="475" y="544">트랜잭션 저장소</text>
+  <text class="detail" x="475" y="570">발생기 신원 · 거부 기록</text>
+  <rect class="store" x="700" y="480" width="230" height="110" rx="8"/>
+  <text class="name" x="815" y="517">PostgreSQL [PG]</text>
+  <text class="type" x="815" y="544">동일 저장소 반복 표기</text>
+  <text class="detail" x="815" y="570">권한 · 점유 · 가격 · 정산</text>
+  <rect class="app" x="360" y="700" width="230" height="110" rx="8"/>
+  <text class="name" x="475" y="737">웹 대시보드</text>
+  <text class="type" x="475" y="764">웹 애플리케이션 · 기술 미정</text>
+  <text class="detail" x="475" y="790">비용 · 정산 · 권한 화면</text>
+  <rect class="app" x="700" y="700" width="230" height="110" rx="8"/>
+  <text class="name" x="815" y="737">BFF · 인증/인가</text>
+  <text class="type" x="815" y="764">Java 21 · Spring Boot</text>
+  <text class="detail" x="815" y="790">테넌트 격리 · 화면 API</text>
+  <rect class="store" x="1040" y="700" width="230" height="110" rx="8"/>
+  <text class="name" x="1155" y="737">ClickHouse [CH]</text>
+  <text class="type" x="1155" y="764">동일 저장소 반복 표기</text>
+  <text class="detail" x="1155" y="790">귀속 데이터 · 요청 시 집계</text>
+  <rect class="app" x="1380" y="700" width="230" height="110" rx="8"/>
+  <text class="name" x="1495" y="737">월간 정산 배치</text>
+  <text class="type" x="1495" y="764">Java 21 · Spring Boot</text>
+  <text class="detail" x="1495" y="790">검증 · 확정 · 재시도</text>
+  <text x="340" y="872" class="subtitle">애플리케이션·저장소 단위만 표시 · 컨테이너 내부 구성요소 및 복제 수는 생략</text>
+  <text x="42" y="962" class="note">범위: ADR-001·003·007의 실행 단위. 실제 결제는 제외하며 배치는 금액 확정까지 수행합니다.</text>
+  <text x="42" y="998" class="note">미정: 점유 제어·사용량 귀속 처리·캐시의 배치. 원시 → 귀속 완료 데이터 경로는 이 그림에 포함하지 않습니다.</text>
+  <text x="42" y="1034" class="note">[PG]와 [CH]는 각각 하나의 논리 저장소입니다. BFF에는 원시 사용량 원장 접근 권한이 없습니다.</text>
+</svg>
