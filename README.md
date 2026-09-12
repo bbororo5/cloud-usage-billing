@@ -20,7 +20,7 @@
 
 ## 문서
 
-- [C2 컨테이너 다이어그램 (SVG)](docs/diagrams/c2-containers.svg) — 확정된 구성만 표시하며 점유·귀속 처리의 배치는 미정입니다.
+- [C2 컨테이너 다이어그램 (SVG)](docs/diagrams/c2-containers.svg) — Kafka 직접 발행의 목표 구조입니다. 코드 전환과 점유·귀속 처리 배치는 남아 있습니다.
 - [프로젝트 요구사항](docs/requirements.md)
 - [품질 시나리오](docs/quality-scenarios.md)
 - [Architecture Drivers](docs/architecture-driver.md)
