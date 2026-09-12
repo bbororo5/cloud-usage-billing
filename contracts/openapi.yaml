@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Cloud Usage Billing API
   version: 1.0.0
-  description: 사용자 BFF와 사용량 수집 API 계약
+  description: 사용자 BFF 계약. deprecated 수집 API는 전환 전 구현 호환용이며 목표 구조에서는 Kafka 직접 발행으로 대체한다.
 servers:
   - url: /api/v1
 tags:
@@ -261,10 +261,11 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
   /usage-events:
     post:
+      deprecated: true
       tags: [Ingestion]
       operationId: ingestUsageEvent
       summary: 사용량 이벤트 검증 및 Kafka 내구성 기록
-      description: 발생기별 불투명 자격 증명으로 인증하고, 자격 증명의 source 범위 안의 이벤트만 수신한다.
+      description: 이전 HTTP 수집 경로의 계약이다. ADR-010에 따라 Kafka 직접 발행으로 대체하며, 기존 코드 전환 전까지 호환 기록으로 유지한다.
       security:
         - ProducerCredential: []
       requestBody:
