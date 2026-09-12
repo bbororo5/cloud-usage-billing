@@ -26,15 +26,16 @@ PostgreSQL·Kafka·ClickHouse 사이에서 데이터가 언제 안전하게 기�
 ## 3. 이벤트 적재
 
 ```text
-발생기 인증·계약 검증
-→ Kafka에 CloudEvents source를 key로 기록
-→ broker 내구성 ACK 후 202
-→ consumer가 이벤트를 서비스별 3행으로 변환
-→ ClickHouse 원시 원장 batch insert 성공
+발생기가 브로커 인증 후 source를 key로 직접 발행
+→ Kafka 내구성 ACK (계약 미검증)
+→ 원장 적재기가 계약·출처 검증
+→ 유효 이벤트는 3행으로 변환해 ClickHouse 적재 / 잘못된 이벤트는 내구 격리
+→ 해당 묶음의 적재·격리 모두 성공
 → Kafka offset commit
 ```
 
 - 재시작·재시도로 같은 전달이 다시 적재될 수 있다.
+- 검증 실패는 재시도만 반복하지 않고 격리한다. 격리 저장 실패는 재시도하며 성공 전에 offset을 진행하지 않는다. 격리 저장 구조와 발생기 신원 연결은 ADR-010의 후속 구현 범위다.
 - 원시 원장은 회사 정보 없이 VM `source`와 Kafka topic·partition·offset을 보존하고, 귀속 및 집계는 논리 키별 전달 사본을 하나로 취급한다.
 - 동일 논리 키의 `payload_hash`가 둘 이상이면 계산하지 않고 데이터 이상으로 처리한다.
 - ClickHouse 실패 중에는 offset을 진행하지 않아 Kafka에서 복구한다.

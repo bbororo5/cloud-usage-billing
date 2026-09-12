@@ -11,11 +11,13 @@
 
 ## 2. 현재 위치
 
+**수집 경로 변경 승인(ADR-010): 발생기 → Kafka → 원장 적재기(검증·격리).** 접수 API는 목표 구조에서 제거한다. 기존 API 코드와 OpenAPI는 아직 남아 있으며, 직접 producer·출처 검증·내구 격리를 구현·검증한 뒤 정리한다. 아래 단계 2 완료 기록은 변경 전 기반의 이력이다.
+
 **단계 2의 테넌트 비인지 수집 기반을 완료하고 단계 3-A 귀속 설계·학습을 진행 중**이다. 이후 승인한 60초 규칙과 점유 캐시·귀속 오류 처리는 문서에 반영했으며 구현은 남아 있다.
 
 현재 확정된 핵심은 다음과 같다.
 
-- VM은 1분 주기의 CloudEvents 사용량과 `source`만 발행한다. 회사·과금 계정·Kafka·가격 정보는 모른다.
+- VM은 1분 주기의 CloudEvents 사용량과 `source`를 Kafka에 직접 발행한다. 회사·과금 계정·가격 정보는 모른다.
 - Kafka 키는 VM 출처인 `source`다. 원시 사용량은 ClickHouse에 보존한다.
 - PostgreSQL의 회사–VM 점유 이력은 `[validFrom, validTo)`로 사용 시점의 지불 회사를 결정한다.
 - 귀속하지 못했거나 중복 귀속된 사용량은 공개·확정하지 않고 오류로 격리한다.
@@ -89,9 +91,8 @@
 ## 6. 구현 단위
 
 ```text
-usage-generator       : 정상·중복·지연·부하 이벤트 발생
-usage-event-api       : 계약 검증 후 Kafka 기록
-usage-ledger-writer   : Kafka 소비 후 원시 ClickHouse 원장 적재
+usage-generator       : 정상·중복·지연·부하 이벤트를 Kafka에 직접 발행
+usage-ledger-writer   : Kafka 소비 후 계약·출처 검증, 오류 격리, 원시 ClickHouse 적재
 attribution-worker    : 점유 이력으로 사용량을 회사에 귀속하고 오류 격리
 settlement-batch      : 월간 검증·재시도·확정
 billing-bff           : 세션·RBAC·비용·정산 API
