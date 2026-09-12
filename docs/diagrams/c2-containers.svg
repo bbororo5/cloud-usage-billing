@@ -26,7 +26,7 @@
 
   <!-- Container relationships. Arrows denote calls / writes; responses omitted. -->
   <path class="edge" d="M255 295 H360"/>
-  <text class="label" x="305" y="269">HTTP</text>
+  <text class="label" x="305" y="269">사용량 전송</text>
   <path class="edge" d="M590 295 H700"/>
   <text class="label" x="645" y="263">이벤트 기록</text>
   <path class="edge" d="M930 295 H1040"/>
@@ -39,7 +39,7 @@
   <path class="edge" d="M255 755 H360"/>
   <text class="label" x="305" y="728">화면 사용</text>
   <path class="edge" d="M590 755 H700"/>
-  <text class="label" x="645" y="728">HTTP API</text>
+  <text class="label" x="645" y="728">조회·관리 요청</text>
   <path class="edge" d="M815 700 V590"/>
   <text class="label" x="815" y="638">인증·권한 / 확정 조회</text>
   <text class="label" x="815" y="660">구성원 권한 관리</text>
@@ -55,24 +55,21 @@
   <rect class="external" x="40" y="240" width="215" height="110" rx="8"/>
   <text class="name" x="147" y="277">사용량 발생기</text>
   <text class="type" x="147" y="304">외부 시스템</text>
-  <text class="detail" x="147" y="330">CloudEvents 발행</text>
+  <text class="detail" x="147" y="330">사용량 이벤트 발행</text>
   <rect class="external" x="40" y="700" width="215" height="110" rx="8"/>
   <text class="name" x="147" y="742">사용자</text>
-  <text class="type" x="147" y="775">Admin · Viewer</text>
+  <text class="type" x="147" y="775">관리자 · 조회자</text>
 
   <!-- Confirmed application containers. -->
   <rect class="app" x="360" y="240" width="230" height="110" rx="8"/>
   <text class="name" x="475" y="277">이벤트 접수 API</text>
-  <text class="type" x="475" y="304">Java 21 · Spring Boot</text>
-  <text class="detail" x="475" y="330">검증 · 내구성 기록 접수</text>
+  <text class="detail" x="475" y="316">이벤트 검증 · 접수</text>
   <rect class="store" x="700" y="240" width="230" height="110" rx="8"/>
   <text class="name" x="815" y="277">Kafka</text>
-  <text class="type" x="815" y="304">Apache Kafka</text>
-  <text class="detail" x="815" y="330">이벤트 로그 · 재전달</text>
+  <text class="detail" x="815" y="316">이벤트 보존 · 재전달</text>
   <rect class="app" x="1040" y="240" width="230" height="110" rx="8"/>
   <text class="name" x="1155" y="277">원장 적재기</text>
-  <text class="type" x="1155" y="304">Java 21 · Spring Boot</text>
-  <text class="detail" x="1155" y="330">사용량 원시 레코드 적재</text>
+  <text class="detail" x="1155" y="316">원시 사용량 저장</text>
   <rect class="store" x="1380" y="240" width="230" height="110" rx="8"/>
   <text class="name" x="1495" y="277">ClickHouse [CH]</text>
   <text class="type" x="1495" y="304">분석 저장소</text>
@@ -87,20 +84,17 @@
   <text class="detail" x="815" y="570">권한 · 점유 · 가격 · 정산</text>
   <rect class="app" x="360" y="700" width="230" height="110" rx="8"/>
   <text class="name" x="475" y="737">웹 대시보드</text>
-  <text class="type" x="475" y="764">웹 애플리케이션 · 기술 미정</text>
-  <text class="detail" x="475" y="790">비용 · 정산 · 권한 화면</text>
+  <text class="detail" x="475" y="776">비용 · 정산 · 권한 화면</text>
   <rect class="app" x="700" y="700" width="230" height="110" rx="8"/>
   <text class="name" x="815" y="737">BFF · 인증/인가</text>
-  <text class="type" x="815" y="764">Java 21 · Spring Boot</text>
-  <text class="detail" x="815" y="790">테넌트 격리 · 화면 API</text>
+  <text class="detail" x="815" y="776">회사별 접근 제어 · 응답 조합</text>
   <rect class="store" x="1040" y="700" width="230" height="110" rx="8"/>
   <text class="name" x="1155" y="737">ClickHouse [CH]</text>
   <text class="type" x="1155" y="764">동일 저장소 반복 표기</text>
   <text class="detail" x="1155" y="790">귀속 데이터 · 요청 시 집계</text>
   <rect class="app" x="1380" y="700" width="230" height="110" rx="8"/>
   <text class="name" x="1495" y="737">월간 정산 배치</text>
-  <text class="type" x="1495" y="764">Java 21 · Spring Boot</text>
-  <text class="detail" x="1495" y="790">검증 · 확정 · 재시도</text>
+  <text class="detail" x="1495" y="776">월간 금액 검증 · 확정</text>
   <text x="340" y="872" class="subtitle">애플리케이션·저장소 단위만 표시 · 컨테이너 내부 구성요소 및 복제 수는 생략</text>
   <text x="42" y="962" class="note">범위: ADR-001·003·007의 실행 단위. 실제 결제는 제외하며 배치는 금액 확정까지 수행합니다.</text>
   <text x="42" y="998" class="note">미정: 점유 제어·사용량 귀속 처리·캐시의 배치. 원시 → 귀속 완료 데이터 경로는 이 그림에 포함하지 않습니다.</text>
