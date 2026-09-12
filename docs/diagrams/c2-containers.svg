@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1080" viewBox="0 0 1680 1080" role="img" aria-labelledby="title desc">
   <title id="title">Cloud Usage Billing — C2 컨테이너 다이어그램</title>
-  <desc id="desc">목표 컨테이너 관계를 표시한다. 외부 발생기가 Kafka에 직접 발행하고 원장 적재기가 검증·격리 후 유효 사용량을 ClickHouse에 저장한다. 사용자는 웹과 BFF로 귀속 완료 데이터와 PostgreSQL 정보를 조회한다. 배치는 ClickHouse를 조회하고 PostgreSQL에 확정 결과를 기록한다. 점유·귀속·캐시 및 격리 저장 배치는 미정이다. CH는 동일 저장소를 반복 표시한다. 직접 발행 코드 전환은 아직 남아 있다.</desc>
+  <desc id="desc">단순화 목표 컨테이너 관계를 표시한다. 외부 VM 발생기가 Kafka에 직접 발행하고 ClickHouse가 직접 소비한다. 별도 접수 API나 원장 적재기 컨테이너는 없다. 사용자는 웹과 BFF로 귀속 완료 데이터와 PostgreSQL 정보를 조회한다. 배치는 ClickHouse를 조회하고 PostgreSQL에 확정 결과를 기록한다. 직접 소비의 검증·격리·복구는 구현 전 검증 대상이며 점유·귀속·캐시 배치는 미정이다. CH는 동일 저장소를 반복 표시한다.</desc>
   <defs>
     <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#52657b" stroke-width="1.5"/></marker>
     <style>
@@ -20,17 +20,15 @@
   </defs>
   <rect width="1680" height="1080" fill="#fff"/>
   <text x="42" y="58" class="heading">Cloud Usage Billing</text>
-  <text x="42" y="92" class="subtitle">C2 · Container diagram / 승인된 목표 구조 · 직접 발행 코드 전환 전</text>
+  <text x="42" y="92" class="subtitle">C2 · Container diagram / 단순화 목표 구조 · 직접 소비 검증·구현 전</text>
   <rect x="310" y="145" width="1320" height="765" rx="12" fill="#fbfcfe" stroke="#a3b2c2" stroke-width="1.5" stroke-dasharray="7 6"/>
   <text x="338" y="180" font-size="18" font-weight="700">클라우드 사용량 정산 시스템</text>
 
   <!-- Container relationships. Arrows denote calls / writes; responses omitted. -->
   <path class="edge" d="M255 295 H360"/>
   <text class="label" x="305" y="269">직접 발행</text>
-  <path class="edge" d="M590 295 H870"/>
-  <text class="label" x="730" y="263">미검증 이벤트 전달</text>
-  <path class="edge" d="M1100 295 H1380"/>
-  <text class="label" x="1240" y="263">검증된 원시 사용량 적재</text>
+  <path class="edge" d="M590 295 H1040"/>
+  <text class="label" x="815" y="263">이벤트 전달 · ClickHouse가 직접 소비</text>
   <path class="edge" d="M255 755 H360"/>
   <text class="label" x="305" y="728">화면 사용</text>
   <path class="edge" d="M590 755 H700"/>
@@ -48,7 +46,7 @@
 
   <!-- External actor and system. -->
   <rect class="external" x="40" y="240" width="215" height="110" rx="8"/>
-  <text class="name" x="147" y="277">사용량 발생기</text>
+  <text class="name" x="147" y="277">VM 발생기들</text>
   <text class="type" x="147" y="304">외부 시스템</text>
   <text class="detail" x="147" y="330">직접 발행 · 실패 시 재시도</text>
   <rect class="external" x="40" y="700" width="215" height="110" rx="8"/>
@@ -58,14 +56,12 @@
   <!-- Confirmed application containers. -->
   <rect class="store" x="360" y="240" width="230" height="110" rx="8"/>
   <text class="name" x="475" y="277">Kafka</text>
-  <text class="detail" x="475" y="316">이벤트 보존 · 재전달</text>
-  <rect class="app" x="870" y="240" width="230" height="110" rx="8"/>
-  <text class="name" x="985" y="277">원장 적재기</text>
-  <text class="detail" x="985" y="316">검증 · 오류 격리 · 원장 적재</text>
-  <rect class="store" x="1380" y="240" width="230" height="110" rx="8"/>
-  <text class="name" x="1495" y="277">ClickHouse [CH]</text>
-  <text class="type" x="1495" y="304">분석 저장소</text>
-  <text class="detail" x="1495" y="330">원시 · 귀속 사용량</text>
+  <text class="type" x="475" y="304">입력 분산 · 적체 보존</text>
+  <text class="detail" x="475" y="330">장애 후 재전달</text>
+  <rect class="store" x="1040" y="240" width="230" height="110" rx="8"/>
+  <text class="name" x="1155" y="277">ClickHouse [CH]</text>
+  <text class="type" x="1155" y="304">직접 소비 · 검증 · 격리</text>
+  <text class="detail" x="1155" y="330">사용량 저장 · 분석</text>
   <rect class="store" x="700" y="480" width="230" height="110" rx="8"/>
   <text class="name" x="815" y="517">PostgreSQL</text>
   <text class="type" x="815" y="544">운영 원장 · 확정 결과</text>
@@ -84,7 +80,7 @@
   <text class="name" x="1495" y="737">월간 정산 배치</text>
   <text class="detail" x="1495" y="776">월간 금액 검증 · 확정</text>
   <text x="340" y="872" class="subtitle">애플리케이션·저장소 단위만 표시 · 컨테이너 내부 구성요소 및 복제 수는 생략</text>
-  <text x="42" y="962" class="note">ADR-010: 접수 API 제거 · 원장 적재기에 검증·격리 책임 통합. Kafka ACK는 내용 검증 완료를 뜻하지 않습니다.</text>
-  <text x="42" y="998" class="note">미정: 점유 제어·귀속·캐시 배치와 오류 격리 저장 구조. 원시 → 귀속 완료 경로는 아직 생략했습니다.</text>
+  <text x="42" y="962" class="note">접수 API·별도 적재기 없이 연결합니다. ClickHouse의 검증·격리·중복 처리·장애 복구는 검증할 목표입니다.</text>
+  <text x="42" y="998" class="note">미정: 점유 제어·귀속·캐시 배치. 원시 → 귀속 완료 경로는 생략했으며 Kafka ACK만으로 과금하지 않습니다.</text>
   <text x="42" y="1034" class="note">[CH]는 동일 저장소 반복 표기입니다. BFF는 귀속 완료 데이터만 읽으며 실제 결제는 범위 밖입니다.</text>
 </svg>

@@ -20,7 +20,7 @@
 
 ## 문서
 
-- [C2 컨테이너 다이어그램 (SVG)](docs/diagrams/c2-containers.svg) — Kafka 직접 발행의 목표 구조입니다. 코드 전환과 점유·귀속 처리 배치는 남아 있습니다.
+- [C2 컨테이너 다이어그램 (SVG)](docs/diagrams/c2-containers.svg) — 발생기 → Kafka → ClickHouse 직접 소비의 목표 구조입니다. 검증·격리·복구 실험과 코드 전환은 남아 있습니다.
 - [프로젝트 요구사항](docs/requirements.md)
 - [품질 시나리오](docs/quality-scenarios.md)
 - [Architecture Drivers](docs/architecture-driver.md)
