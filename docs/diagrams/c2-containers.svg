@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1080" viewBox="0 0 1680 1080" role="img" aria-labelledby="title desc">
   <title id="title">Cloud Usage Billing — C2 컨테이너 다이어그램</title>
-  <desc id="desc">단순화 목표 컨테이너 관계를 표시한다. 외부 VM 발생기가 Kafka에 직접 발행하고 ClickHouse가 직접 소비한다. 별도 접수 API나 원장 적재기 컨테이너는 없다. 사용자는 웹과 BFF로 귀속 완료 데이터와 PostgreSQL 정보를 조회한다. 배치는 ClickHouse를 조회하고 PostgreSQL에 확정 결과를 기록한다. 직접 소비의 검증·격리·복구는 구현 전 검증 대상이며 점유·귀속·캐시 배치는 미정이다. CH는 동일 저장소를 반복 표시한다.</desc>
+  <desc id="desc">단순화 목표 컨테이너 관계를 표시한다. 운영자 통제 발생기가 Kafka에 직접 발행하고 ClickHouse가 입력을 신뢰해 소비·저장한다. 별도 접수 API나 적재기 컨테이너는 없다. 사용자는 웹과 BFF로 귀속 완료 데이터와 PostgreSQL 정보를 조회한다. 배치는 ClickHouse를 조회하고 PostgreSQL에 확정 결과를 기록한다. 적재 내구성·멱등성·복구는 검증 전이며 점유·귀속·캐시 배치는 미정이다. CH는 동일 저장소를 반복 표시한다.</desc>
   <defs>
     <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="#52657b" stroke-width="1.5"/></marker>
     <style>
@@ -60,7 +60,7 @@
   <text class="detail" x="475" y="330">장애 후 재전달</text>
   <rect class="store" x="1040" y="240" width="230" height="110" rx="8"/>
   <text class="name" x="1155" y="277">ClickHouse [CH]</text>
-  <text class="type" x="1155" y="304">직접 소비 · 검증 · 격리</text>
+  <text class="type" x="1155" y="304">직접 소비 · 중복 반영 방어</text>
   <text class="detail" x="1155" y="330">사용량 저장 · 분석</text>
   <rect class="store" x="700" y="480" width="230" height="110" rx="8"/>
   <text class="name" x="815" y="517">PostgreSQL</text>
@@ -80,7 +80,7 @@
   <text class="name" x="1495" y="737">월간 정산 배치</text>
   <text class="detail" x="1495" y="776">월간 금액 검증 · 확정</text>
   <text x="340" y="872" class="subtitle">애플리케이션·저장소 단위만 표시 · 컨테이너 내부 구성요소 및 복제 수는 생략</text>
-  <text x="42" y="962" class="note">접수 API·별도 적재기 없이 연결합니다. ClickHouse의 검증·격리·중복 처리·장애 복구는 검증할 목표입니다.</text>
+  <text x="42" y="962" class="note">운영자 관리 입력을 신뢰합니다. 별도 내용 검증·자동 격리는 제외하며 적재·멱등성·복구는 검증 전입니다.</text>
   <text x="42" y="998" class="note">미정: 점유 제어·귀속·캐시 배치. 원시 → 귀속 완료 경로는 생략했으며 Kafka ACK만으로 과금하지 않습니다.</text>
   <text x="42" y="1034" class="note">[CH]는 동일 저장소 반복 표기입니다. BFF는 귀속 완료 데이터만 읽으며 실제 결제는 범위 밖입니다.</text>
 </svg>

@@ -22,7 +22,8 @@
 | 점유 요청 만료 | 60초 경계의 활성화·만료 경합, 기한 경과 후 재전달, 완료 응답 유실 | 만료 후 신규 활성화·중복 점유 0건, 같은 요청 결과 유지 | 구현 후 매 커밋·통합 검증 |
 | 종료 복구 | 해제 후 Kafka ACK 전 중단, 원장 반영 후 캐시 실패, 이전 점유 종료의 지연 도착 | 종료 사실 복구, 실제 해제 시각 유지, 새 점유 종료 0건, 반영 완료 전 offset 진행 0건 | 구현 후 통합 검증 |
 | 구조 | 모듈 책임과 의존 관계 검사 | 금지된 의존 0건 | 매 커밋 |
-| 직접 소비 전환 | 발생기→Kafka→ClickHouse, 검증 실패 격리·후속 정상 이벤트 진행, 격리 저장 장애·재시작, 출처 위조 | 위조·무효 이벤트 원장 반영 0건, 격리 실패 중 offset 진행 0건, 재처리 유실 0건 | 내장 소비 방식 검증 시 |
+| 직접 소비 전환 | 발생기→Kafka→ClickHouse, ACK 유실·재전송·저장 실패·재시작 | 안전한 적재 전 offset 진행 0건, 재처리 유실·중복 반영 0건 | 내장 소비 방식 검증 시 |
+| 발생기 계약 | 60초·3개 meter·자원 일치·수량·단위, 재전송 식별자와 내용 유지 | 계약 위반 0건 | 발생기 변경 시 |
 
 ## 운영
 
@@ -46,7 +47,7 @@
 | 대상 | 파일 | 현재 검증 |
 |---|---|---|
 | PostgreSQL | `database/postgresql/schema_test.sql` | RLS, 마지막 Admin, 가격 구간, 실행 재시도, 단일 확정 |
-| ClickHouse | `database/clickhouse/schema_test.sql` | 전달 중복 제거, VM 출처 격리, 가격 사본 버전 |
+| ClickHouse | `database/clickhouse/schema_test.sql` | 전달 중복 제거, VM source별 조회 범위, 가격 사본 버전 (발행자 신원 증명 아님) |
 | Kafka | `scripts/verify-kafka-durability.sh` | 복제 계수 3, 최소 ISR 2, 복제본 장애 중 ACK와 ISR 미달 쓰기 거부 |
 | 조회·배치 | `database/clickhouse/queries` | 귀속 조회 모델 확정 후 비용·월간 총액·안정 커서 쿼리 추가 |
 | 이벤트 계약 | `contracts/v1` | JSON Schema와 예제 일치 |
