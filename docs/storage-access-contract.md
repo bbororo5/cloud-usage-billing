@@ -28,7 +28,7 @@ PostgreSQL·Kafka·ClickHouse 사이에서 데이터가 언제 안전하게 기�
 ```text
 발생기가 브로커 인증 후 source를 key로 직접 발행
 → Kafka 내구성 ACK (입력 내용은 발생기 계약으로 신뢰)
-→ 이벤트를 3행으로 변환해 ClickHouse 적재
+→ 사용량 배열을 유지한 이벤트 1개를 ClickHouse 원장 1행으로 적재
 → 해당 묶음의 데이터·파일 메타데이터 디스크 동기화 완료
 → Kafka offset commit
 ```
@@ -38,8 +38,8 @@ PostgreSQL·Kafka·ClickHouse 사이에서 데이터가 언제 안전하게 기�
 - 기준은 승인됐지만 직접 소비의 실제 동기화 설정·offset 진행 순서는 구현 전 검증한다. 모든 적재 대상에 적용하며 중간 비동기 경로가 보장을 끊지 않아야 한다. [ClickHouse 내구성 설명](https://clickhouse.com/docs/reference/engines/table-engines/integrations/kafka#data-durability)
 - 디스크 동기화 대기로 인한 처리량·지연을 측정한다. 디스크 자체의 영구 손실은 이 기준만으로 보호하지 못하며 별도 복구 범위로 구분한다.
 - 별도 내용·출처 검증과 자동 오류 격리는 두지 않는다. 파싱·적재가 불가능하면 실패로 남기고 해당 소비 위치를 건너뛰지 않는다. 원인 해소 후 재처리한다.
-- 원시 원장은 회사 정보 없이 VM `source`와 Kafka topic·partition·offset을 보존하고, 귀속 및 집계는 논리 키별 전달 사본을 하나로 취급한다.
-- 귀속 입력은 [내부 전용 일반 뷰](clickhouse-physical-data-model.md#중복-제거용-일반-뷰)에서 읽을 때 중복을 제거한다. 결과 사본은 만들지 않으며 BFF의 직접 접근은 허용하지 않는다. 뷰 SQL·권한은 구현 전이다.
+- 원시 원장은 회사 정보 없이 VM `source`, 이벤트 내용과 Kafka topic·partition·offset을 보존한다. 일반 뷰는 `source + id`별 이벤트 전체를 하나 선택하며, 내부 측정값 3개를 누락하지 않는다.
+- 귀속 입력은 [내부 전용 일반 뷰](clickhouse-physical-data-model.md#중복-제거용-일반-뷰)에서 이벤트 중복 제거 후 필요할 때 서비스별로 펼친다. 결과 사본은 만들지 않으며 BFF의 직접 접근은 허용하지 않는다. 이벤트 단위 원장·뷰 SQL·권한은 구현 전이다.
 - 동일 논리 키의 내용은 발생기가 유지한다. 내용 충돌 검사는 현재 수집 범위에서 제외한다.
 - ClickHouse 실패 중에는 offset을 진행하지 않아 Kafka에서 복구한다.
 

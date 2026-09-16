@@ -50,8 +50,8 @@ VM 출처는 유지되지만 점유 회사는 바뀐다. 따라서 이벤트에 
 | 엔티티 | 논리 식별자 | 책임 |
 |---|---|---|
 | UsageProducer | source | VM 출처 식별, 회사와 독립 |
-| UsageEvent | source + id | 재전달돼도 같은 측정 사건 |
-| RawUsageRecord | source + id + meter | 이벤트의 서비스별 측정값 |
+| UsageEvent | source + id | 원장에 이벤트 단위로 보존하는 측정 사건, 재전달 중복 제거 단위 |
+| RawUsageRecord | source + id + meter | 이벤트 내부의 서비스별 측정값, 읽을 때 펼치며 별도 원장 행으로 저장하지 않음 |
 | Allocation | 점유 이력 식별자 | source·회사·점유 시작/종료·버전 |
 | AttributedUsageRecord | 회사 + source + id + meter | 회사가 확인된 조회용 사용량 |
 | AttributionError | 귀속 오류 식별자 | 원본·사용 구간·원인·해결 이력 |

@@ -32,6 +32,8 @@
 
 동일 이벤트의 논리 식별자는 `source + id`이며, Kafka 파티션 키는 VM 출처인 `source`다.
 
+`data`의 측정값 3개는 CloudEvents가 강제한 형식이 아니라 프로젝트 계약이다. 입력은 이벤트 하나이며, 서비스별 행 전개는 저장·조회 설계의 선택이다.
+
 ## 4. 원시 사용량 레코드
 
 모든 레코드는 `ChargePeriodStart/End`, `RegionId`, `ResourceId`, `ResourceType`, `Meter`, `ConsumedQuantity`, `ConsumedUnit`을 갖는다. 회사(`BillingAccountId`) 및 가격(`SkuId`) 정보는 포함하지 않는다.
