@@ -128,6 +128,7 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/CostUnavailable' }
   /settlements/{billingMonth}:
     get:
       tags: [Settlements]
@@ -276,9 +277,9 @@ paths:
               $ref: './v1/instance-usage-event.schema.json'
       responses:
         '202': { description: Kafka에 내구성 있게 기록됨 }
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
+        '400': { $ref: '#/components/responses/LegacyBadRequest' }
+        '401': { $ref: '#/components/responses/LegacyUnauthorized' }
+        '403': { $ref: '#/components/responses/LegacyForbidden' }
         '422': { $ref: '#/components/responses/UnprocessableEntity' }
         '413': { $ref: '#/components/responses/PayloadTooLarge' }
         '503': { $ref: '#/components/responses/ServiceUnavailable' }
@@ -432,6 +433,14 @@ components:
         role: { $ref: '#/components/schemas/BillingRole' }
     Error:
       type: object
+      required: [code, traceId]
+      properties:
+        code: { type: string }
+        traceId: { type: string }
+      additionalProperties: false
+    LegacyIngestionError:
+      description: deprecated HTTP 수집 구현 전용. 신규 사용자 API에서는 사용하지 않는다.
+      type: object
       required: [code, message, traceId]
       properties:
         code: { type: string }
@@ -468,14 +477,34 @@ components:
       description: 사용량 의미 규칙 위반
       content:
         application/problem+json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: '#/components/schemas/LegacyIngestionError' }
     PayloadTooLarge:
       description: 이벤트 payload 크기 제한 초과
       content:
         application/problem+json:
-          schema: { $ref: '#/components/schemas/Error' }
+          schema: { $ref: '#/components/schemas/LegacyIngestionError' }
     ServiceUnavailable:
       description: Kafka에 내구성 있게 기록할 수 없음
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/LegacyIngestionError' }
+    LegacyBadRequest:
+      description: 이전 HTTP 수집 요청 형식 오류
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/LegacyIngestionError' }
+    LegacyUnauthorized:
+      description: 이전 HTTP 수집 인증 실패
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/LegacyIngestionError' }
+    LegacyForbidden:
+      description: 이전 HTTP 수집 권한 부족
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/LegacyIngestionError' }
+    CostUnavailable:
+      description: 가격 누락·가격 사본 버전 불일치 또는 의존 저장소 장애로 비용 계산 불가
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Error' }
