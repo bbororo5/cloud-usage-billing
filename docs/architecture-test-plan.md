@@ -1,6 +1,6 @@
 # Architecture Test Plan
 
-아키텍처 드라이버를 구현 전 테스트 계획과 연결하고, 구현 후 자동으로 검증한다.
+HLD에서 경계·계약 가드레일을 마련하고, 흐름별 LLD에서 입력·상태공간과 오라클을 설계한 뒤 TDD로 구현한다.
 
 아래 테스트는 목표이며 통과 기록이 아니다. 기존 수집 검증 결과를 ClickHouse 직접 소비 구조의 검증으로 간주하지 않는다.
 
@@ -46,10 +46,10 @@
 
 ## 준비 순서
 
-1. 이벤트 형식 확정 후 테스트 이벤트와 발생기를 만든다.
-2. 모듈 책임 확정 후 구조 테스트를 만든다.
-3. [API 계약과 권한표](api-contract.md)를 기준으로 권한·부하 테스트를 만든다.
-4. 점유 이력 매핑, 미귀속 차단, 테넌트 격리(Row Policy/RLS), 스트리밍·배치 재실행 테스트를 만든다.
+1. 승인된 이벤트·API 계약의 정상/위반 예제와 CI 검사를 먼저 갖춘다.
+2. 확정된 책임·접근 경계를 구조·권한 테스트로 연결한다. 미정인 모듈 구조는 검사로 고정하지 않는다.
+3. 흐름별 내부·연결 LLD에서 입력·상태·장애 시점과 독립적인 판정 기준을 설계하고 승인받는다.
+4. 구현할 동작의 실패 확인 → 최소 구현 → 리팩터링·통합·회귀 검증을 반복한다. 비용이 큰 부하·내구성 검증은 별도 수행한다.
 
 모든 ADR에는 관련 테스트와 통과 기준을 함께 기록한다.
 
@@ -61,7 +61,9 @@
 | ClickHouse | `database/clickhouse/schema_test.sql` | 이전 서비스별 행 원장의 중복 제거·VM source별 조회 범위·가격 사본 버전. 이벤트 단위 원장 검증은 미구현 |
 | Kafka | `scripts/verify-kafka-durability.sh` | 복제 계수 3, 최소 ISR 2, 복제본 장애 중 ACK와 ISR 미달 쓰기 거부 |
 | 조회·배치 | `database/clickhouse/queries` | 귀속 조회 모델 확정 후 비용·월간 총액·안정 커서 쿼리 추가 |
-| 이벤트 계약 | `contracts/v1` | JSON Schema와 예제 일치 |
-| API 계약 | `contracts/openapi.yaml` | OpenAPI lint |
+| 이벤트 계약 | `tests/contracts` | 스키마·format·60초 의미 규칙의 정상/위반 예제. 실제 발생기 동작은 미검증 |
+| API 계약 | `tests/contracts`, `contracts/examples` | 선택한 OpenAPI 선언·참조·스키마·경계 예제. 전체 표준 lint 및 실제 API 응답·권한 검증은 아님 |
 
-수집 파이프라인 검증을 안정화한 뒤 Testcontainers 기반 통합 테스트와 CI 명령으로 묶는다.
+계약 검사는 `./gradlew :tests:contracts:test --no-daemon`으로 실행하며 `.github/workflows/contracts.yml`에서 push·PR 시 수행한다. CI 등록과 별개로 병합 강제에는 저장소의 필수 상태 검사 설정이 필요하며 이번 작업에서는 변경하지 않았다. 실제 DB·Kafka 통합 테스트는 각 LLD에 따라 추가한다.
+
+2026-09-18 계약 기반: API 불일치 2건의 실패→수정→통과를 확인하고 이벤트 45건·API 32건의 검사를 추가했다. 세부 범위와 미검증 항목은 [계약 검사 안내](../tests/contracts/README.md)를 따른다. 기존 파서의 1~60초 허용 규칙은 제품 구현 수정 전이며 새 계약 검사 통과와 구분한다.
