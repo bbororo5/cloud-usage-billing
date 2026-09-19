@@ -26,7 +26,14 @@ if [[ "$access_ready" != true ]]; then
   exit 1
 fi
 
-for sql_file in database/postgresql/schema.sql database/postgresql/local-roles.sql tests/postgres-access/fixtures.sql; do
+docker exec "$access_container" createdb -U billing_owner schema_regression
+for test_database in billing schema_regression; do
+  for sql_file in database/postgresql/schema.sql database/postgresql/local-roles.sql database/postgresql/guard-privileges.sql; do
+    docker exec -i "$access_container" psql -X -q -v ON_ERROR_STOP=1 -U billing_owner -d "$test_database" < "$sql_file"
+  done
+done
+docker exec -i "$access_container" psql -X -q -v ON_ERROR_STOP=1 -U billing_owner -d schema_regression < database/postgresql/schema_test.sql
+for sql_file in database/postgresql/local_roles_test.sql tests/postgres-access/fixtures.sql; do
   docker exec -i "$access_container" psql -X -q -v ON_ERROR_STOP=1 -U billing_owner -d billing < "$sql_file"
 done
 access_port="$(docker port "$access_container" 5432/tcp)"

@@ -309,8 +309,52 @@ class PostgresAccessTest {
                 assertEquals("0", scalar(c, "select count(*) from pg_roles where rolname = '" + owner + "' and (rolcanlogin or rolsuper or rolbypassrls or rolcreatedb or rolcreaterole or rolreplication)"));
                 assertEquals("0", scalar(c, "select count(*) from pg_roles where rolname <> '" + owner + "' and pg_has_role('" + owner + "', oid, 'MEMBER')"));
                 assertEquals("0", scalar(c, "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='billing' and pg_has_role('" + owner + "', c.relowner, 'MEMBER')"));
+                for (var table : TABLES) {
+                    boolean canRead = owner.equals("billing_membership_guard")
+                        ? List.of("billing_account", "billing_membership").contains(table.name())
+                        : List.of("settlement_attempt", "settlement_validation").contains(table.name());
+                    assertEquals(canRead ? "t" : "f", scalar(c, "select has_table_privilege('" + owner + "', 'billing." + table.name() + "', 'SELECT')"));
+                    for (String privilege : List.of("INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER")) {
+                        assertEquals("f", scalar(c, "select has_table_privilege('" + owner + "', 'billing." + table.name() + "', '" + privilege + "')"));
+                    }
+                    String lockColumn = switch (table.name()) {
+                        case "billing_account" -> owner.equals("billing_membership_guard") ? "billing_account_id" : "";
+                        case "settlement_attempt", "settlement_validation" -> owner.equals("billing_settlement_guard") ? "run_id" : "";
+                        default -> "";
+                    };
+                    assertEquals(lockColumn.isEmpty() ? "0" : "1", scalar(c,
+                        "select count(*) from pg_attribute where attrelid = 'billing." + table.name() + "'::regclass and attnum > 0 and not attisdropped and has_column_privilege('" + owner + "', attrelid, attnum, 'UPDATE')"));
+                    if (!lockColumn.isEmpty()) {
+                        assertEquals("t", scalar(c, "select has_column_privilege('" + owner + "', 'billing." + table.name() + "', '" + lockColumn + "', 'UPDATE')"));
+                    }
+                }
             }
             c.rollback();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"billing_membership_guard", "billing_settlement_guard"})
+    void nonLoginGuardRoleIsStillSubjectToTenantRls(String guard) throws SQLException {
+        // Admin is used only to enter the NOLOGIN role. Assertions run as that role,
+        // not as the admin; actual application sessions are tested separately above.
+        try (var c = connect("billing_owner")) {
+            try {
+                try (var s = c.createStatement()) { s.execute("set local role " + guard); }
+                assertEquals(guard, scalar(c, "select current_user"));
+                var tables = guard.equals("billing_membership_guard")
+                    ? List.of("billing_account", "billing_membership")
+                    : List.of("settlement_attempt", "settlement_validation");
+                for (String table : tables) {
+                    scope(c, "", "");
+                    assertEquals("t", scalar(c, "select row_security_active('billing." + table + "')"));
+                    assertEquals("0", scalar(c, "select count(*) from billing." + table));
+                    for (String tenant : List.of("a", "b")) {
+                        scope(c, tenant, "");
+                        assertEquals(tenant, scalar(c, "select distinct billing_account_id from billing." + table));
+                    }
+                }
+            } finally { c.rollback(); }
         }
     }
 }

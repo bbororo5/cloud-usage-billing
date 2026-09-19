@@ -28,7 +28,13 @@ insert into billing.settlement_validation
     (run_id, billing_account_id, billing_month, expected_cost, recalculated_cost, input_data_as_of)
 select run_id, billing_account_id, billing_month, 100, 100, '2026-08-01Z'
 from billing.settlement_attempt;
+-- Even fixture writes use a tenant scope: guard functions do not inherit the
+-- administrator's RLS bypass privilege.
+select set_config('app.billing_account_id', 'a', true);
 insert into billing.monthly_settlement (billing_account_id, billing_month, run_id, billed_cost)
-select billing_account_id, billing_month, run_id, 100 from billing.settlement_attempt;
+select billing_account_id, billing_month, run_id, 100 from billing.settlement_attempt where billing_account_id = 'a';
+select set_config('app.billing_account_id', 'b', true);
+insert into billing.monthly_settlement (billing_account_id, billing_month, run_id, billed_cost)
+select billing_account_id, billing_month, run_id, 100 from billing.settlement_attempt where billing_account_id = 'b';
 update billing.settlement_job set status = 'FINALIZED', finalized_at = now();
 commit;
