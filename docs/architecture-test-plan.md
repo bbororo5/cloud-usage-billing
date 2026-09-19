@@ -92,7 +92,7 @@ DB는 BFF가 설정한 사용자·회사 문맥을 신뢰한다. 따라서 이 �
 
 ### 현재 범위
 
-2026-09-18 실제 계정 테스트를 실행해 **104건 중 102건 통과, 정상 기능 2건 실패**를 확인했다. Admin 강등의 회사 행 잠금과 월간 확정의 검증 행 잠금이 현재 앱 권한으로 거부된다. 제품 권한·잠금은 변경하지 않았다. 다음은 최소 권한과 잠금을 함께 유지할 수정안의 설계·승인이다. 실행법·범위·미검증 항목은 [접근 테스트 안내](../tests/postgres-access/README.md)를 따른다.
+2026-09-18 실제 앱 계정에서 Admin 강등·월간 확정의 잠금 권한 충돌을 발견했다. 2026-09-20 검증 함수의 전용 소유자·제한된 권한을 적용해 **112건 모두 통과**했다. 앱의 직접 변경 권한·기존 잠금은 유지했다. 회사 격리·역할 전환·함수 재사용 차단도 검사한다. 실행법·범위·미검증 항목은 [접근 테스트 안내](../tests/postgres-access/README.md)를 따른다.
 
 기존 `local_roles_test.sql`은 일부 권한 속성 조회, `schema_test.sql`은 별도 테스트 역할의 RLS·무결성 검사다. 이들의 통과를 실제 앱 계정의 정상 기능 성공으로 간주하지 않는다.
 
@@ -103,13 +103,13 @@ ClickHouse 접근 검사는 귀속 모델·테넌트별 신원 LLD 뒤에 구현
 | 대상 | 파일 | 현재 검증 |
 |---|---|---|
 | PostgreSQL | `database/postgresql/schema_test.sql` | RLS, 마지막 Admin, 가격 구간, 실행 재시도, 단일 확정 |
-| PostgreSQL 실제 계정 | `tests/postgres-access` | 허용·금지 SQL, 회사 범위·연결 문맥·권한 우회. 104건 중 잠금 권한 충돌 2건 실패. 별도 `accessTest`이며 계약 CI 미연결 |
+| PostgreSQL 접근 경계 | `tests/postgres-access` | 실제 앱 계정·검증 함수 소유자 검사 112건 통과. 별도 `accessTest`이며 CI의 `postgres-access` 작업으로 실행 |
 | ClickHouse | `database/clickhouse/schema_test.sql` | 이전 서비스별 행 원장의 중복 제거·VM source별 조회 범위·가격 사본 버전. 이벤트 단위 원장 검증은 미구현 |
 | Kafka | `scripts/verify-kafka-durability.sh` | 복제 계수 3, 최소 ISR 2, 복제본 장애 중 ACK와 ISR 미달 쓰기 거부 |
 | 조회·배치 | `database/clickhouse/queries` | 귀속 조회 모델 확정 후 비용·월간 총액·안정 커서 쿼리 추가 |
 | 이벤트 계약 | `tests/contracts` | 스키마·format·60초 의미 규칙의 정상/위반 예제. 실제 발생기 동작은 미검증 |
 | API 계약 | `tests/contracts`, `contracts/examples` | 선택한 OpenAPI 선언·참조·스키마·경계 예제. 전체 표준 lint 및 실제 API 응답·권한 검증은 아님 |
 
-계약 검사는 `./gradlew :tests:contracts:test --no-daemon`으로 실행하며 `.github/workflows/contracts.yml`에서 push·PR 시 수행한다. CI 등록과 별개로 병합 강제에는 저장소의 필수 상태 검사 설정이 필요하며 이번 작업에서는 변경하지 않았다. 실제 DB·Kafka 통합 테스트는 각 LLD에 따라 추가한다.
+계약 검사는 `./gradlew :tests:contracts:test --no-daemon`, PostgreSQL 접근 검사는 `bash scripts/verify-postgresql-access.sh`로 실행하며 `.github/workflows/contracts.yml`에서 push·PR 시 각각 수행한다. CI 등록과 별개로 병합 강제에는 저장소의 필수 상태 검사 설정이 필요하며 이번 작업에서는 변경하지 않았다. 나머지 DB·Kafka 통합 테스트는 각 LLD에 따라 추가한다.
 
 2026-09-18 계약 기반: API 불일치 2건의 실패→수정→통과를 확인하고 이벤트 45건·API 32건의 검사를 추가했다. 세부 범위와 미검증 항목은 [계약 검사 안내](../tests/contracts/README.md)를 따른다. 기존 파서의 1~60초 허용 규칙은 제품 구현 수정 전이며 새 계약 검사 통과와 구분한다.
