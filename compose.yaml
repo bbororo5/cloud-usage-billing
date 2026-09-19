@@ -13,6 +13,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./database/postgresql/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
       - ./database/postgresql/local-roles.sql:/docker-entrypoint-initdb.d/002-local-roles.sql:ro
+      - ./database/postgresql/guard-privileges.sql:/docker-entrypoint-initdb.d/003-guard-privileges.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U billing_owner -d billing"]
       interval: 3s

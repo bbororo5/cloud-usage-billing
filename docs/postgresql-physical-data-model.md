@@ -78,6 +78,19 @@ FK는 PostgreSQL이 자동 인덱싱하지 않으므로 부모 삭제·조인 �
 
 RLS는 쿼리의 회사 조건 누락을 방어한다. 임의 SQL 실행이나 DB 계정 탈취까지 막는 경계로 간주하지 않는다.
 
+### 검증 함수의 권한
+
+행 잠금은 읽기 외에 대상 테이블의 최소 한 열에 `UPDATE` 권한이 필요하다. 앱에 직접 변경 권한을 추가하는 대신, 아래 두 트리거 함수만 전용 소유자의 권한(`SECURITY DEFINER`)으로 실행한다. 기존 잠금과 업무 규칙은 유지한다. [PostgreSQL 권한 기준](https://www.postgresql.org/docs/17/sql-select.html)
+
+| 함수 | 전용 소유자 | 읽기·잠금 범위 |
+|---|---|---|
+| `protect_last_admin` | `billing_membership_guard` | 회사·소속 조회, 회사 ID 열 권한으로 회사 행 잠금 |
+| `enforce_monthly_settlement` | `billing_settlement_guard` | 정산 시도·검증 조회, 각 실행 ID 열 권한으로 참조 행 잠금 |
+
+소유자는 `NOLOGIN`이며 테이블 소유권·관리자·RLS 우회 권한이 없다. 앱에 역할 소속이나 함수 실행 권한을 주지 않아 임의 트리거에 재사용하지 못하게 한다. 함수의 객체 경로를 고정하고 `row_security=on`을 적용한다. 회사 범위는 호출 트랜잭션의 검증된 문맥을 그대로 따른다. 함수 소유권·실행 권한 전환은 한 트랜잭션으로 적용한다. [안전한 함수 작성 기준](https://www.postgresql.org/docs/17/sql-createfunction.html#SQL-CREATEFUNCTION-SECURITY)
+
+설치 순서는 `schema.sql` → `local-roles.sql` → [`guard-privileges.sql`](../database/postgresql/guard-privileges.sql)이다. Compose 자동 설치는 새 DB에만 적용된다. 기존 DB에는 배포 계정으로 마지막 파일을 별도 적용해야 하며, 이번 검증에서는 기존 개발 DB를 변경하지 않았다.
+
 ## 7. 검증 기준
 
 - 다른 회사 ID로 직접 조회해도 0행이어야 한다.

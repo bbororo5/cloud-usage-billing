@@ -17,6 +17,7 @@ insert into billing.billing_membership (billing_account_id, user_id, role) value
 do $$
 begin
     begin
+        perform set_config('app.billing_account_id', 'tenant-001', true);
         update billing.billing_membership
            set role = 'BILLING_ACCOUNT_VIEWER'
          where billing_account_id = 'tenant-001'
@@ -145,6 +146,7 @@ insert into billing.settlement_validation (
 );
 
 begin;
+set local app.billing_account_id = 'tenant-001';
 insert into billing.monthly_settlement (
     billing_account_id, billing_month, run_id, billed_cost
 ) values (
@@ -212,6 +214,7 @@ insert into billing.settlement_validation (
 do $$
 begin
     begin
+        perform set_config('app.billing_account_id', 'tenant-002', true);
         insert into billing.monthly_settlement (
             billing_account_id, billing_month, run_id, billed_cost
         ) values (
