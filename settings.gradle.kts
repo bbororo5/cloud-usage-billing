@@ -17,6 +17,7 @@ rootProject.name = "cloud-usage-billing"
 include(
     "tests:contracts",
     "tests:postgres-access",
+    "tests:module-boundaries",
     "libs:event-contract",
     "apps:usage-event-api",
     "apps:usage-ledger-writer",
