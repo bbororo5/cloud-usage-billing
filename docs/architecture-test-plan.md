@@ -96,7 +96,13 @@ DB는 BFF가 설정한 사용자·회사 문맥을 신뢰한다. 따라서 이 �
 
 기존 `local_roles_test.sql`은 일부 권한 속성 조회, `schema_test.sql`은 별도 테스트 역할의 RLS·무결성 검사다. 이들의 통과를 실제 앱 계정의 정상 기능 성공으로 간주하지 않는다.
 
-ClickHouse 접근 검사는 귀속 모델·테넌트별 신원 LLD 뒤에 구현한다. 코드 의존 검사는 확정된 책임만 대상으로 하고 미정인 패키지 구조는 고정하지 않는다.
+ClickHouse 접근 검사는 귀속 모델·테넌트별 신원 LLD 뒤에 구현한다. 코드 의존 검사는 아래의 승인된 모듈 경계만 대상으로 하며 미정인 패키지 구조는 고정하지 않는다.
+
+## 모듈 의존 경계
+
+`apps → apps`, `libs → apps`, 제품 코드의 `tests` 의존을 금지한다. Java `main`의 컴파일·실행·annotation processor 구성과 상속된 프로젝트 의존을 검사한다. 공용 모듈 사용과 테스트 코드의 제품 참조는 허용한다.
+
+`./gradlew verifyModuleBoundaries :tests:module-boundaries:test --no-daemon`으로 실행한다. 무검사 기준선에서 위반·실행 연결 검사 9건 실패를 확인한 뒤, 구현 후 정상 사례 포함 13건을 통과했다. 실제 저장소 경계 검사도 통과했고 `check`·CI에 연결했다. 이는 코드 의존 검사이지 런타임 격리 증명이 아니다. 세부 범위는 [검사 안내](../tests/module-boundaries/README.md)를 따른다.
 
 ## 현재 자동화 기반
 
@@ -109,6 +115,7 @@ ClickHouse 접근 검사는 귀속 모델·테넌트별 신원 LLD 뒤에 구현
 | 조회·배치 | `database/clickhouse/queries` | 귀속 조회 모델 확정 후 비용·월간 총액·안정 커서 쿼리 추가 |
 | 이벤트 계약 | `tests/contracts` | 스키마·format·60초 의미 규칙의 정상/위반 예제. 실제 발생기 동작은 미검증 |
 | API 계약 | `tests/contracts`, `contracts/examples` | 선택한 OpenAPI 선언·참조·스키마·경계 예제. 전체 표준 lint 및 실제 API 응답·권한 검증은 아님 |
+| 모듈 의존 | `gradle/module-boundaries.gradle.kts`, `tests/module-boundaries` | 실제 프로젝트 의존 검사와 임시 빌드 13건. 내부 패키지·HTTP·DB 접근 검사는 아님 |
 
 계약 검사는 `./gradlew :tests:contracts:test --no-daemon`, PostgreSQL 접근 검사는 `bash scripts/verify-postgresql-access.sh`로 실행하며 `.github/workflows/contracts.yml`에서 push·PR 시 각각 수행한다. CI 등록과 별개로 병합 강제에는 저장소의 필수 상태 검사 설정이 필요하며 이번 작업에서는 변경하지 않았다. 나머지 DB·Kafka 통합 테스트는 각 LLD에 따라 추가한다.
 
