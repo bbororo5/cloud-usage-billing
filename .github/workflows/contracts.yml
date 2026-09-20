@@ -19,8 +19,8 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: gradle
-      - name: Verify event and user API contracts
-        run: ./gradlew :tests:contracts:test --no-daemon
+      - name: Verify contracts and module boundaries
+        run: ./gradlew verifyModuleBoundaries :tests:module-boundaries:test :tests:contracts:test --no-daemon
 
   postgres-access:
     runs-on: ubuntu-latest

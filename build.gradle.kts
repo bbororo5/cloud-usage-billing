@@ -7,6 +7,8 @@ plugins {
 group = "io.github.bbororo5"
 version = "0.1.0-SNAPSHOT"
 
+apply(from = "gradle/module-boundaries.gradle.kts")
+
 subprojects {
     apply(plugin = "java")
 
