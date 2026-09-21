@@ -110,13 +110,13 @@ ClickHouse 접근 검사는 귀속 모델·테넌트별 신원 LLD 뒤에 구현
 |---|---|---|
 | PostgreSQL | `database/postgresql/schema_test.sql` | RLS, 마지막 Admin, 가격 구간, 실행 재시도, 단일 확정 |
 | PostgreSQL 접근 경계 | `tests/postgres-access` | 실제 앱 계정·검증 함수 소유자 검사 112건 통과. 별도 `accessTest`이며 CI의 `postgres-access` 작업으로 실행 |
-| ClickHouse | `database/clickhouse/schema_test.sql` | 이전 서비스별 행 원장의 중복 제거·VM source별 조회 범위·가격 사본 버전. 이벤트 단위 원장 검증은 미구현 |
-| Kafka | `scripts/verify-kafka-durability.sh` | 복제 계수 3, 최소 ISR 2, 복제본 장애 중 ACK와 ISR 미달 쓰기 거부 |
+| ClickHouse | `database/clickhouse/schema_test.sql`, `scripts/verify-clickhouse-storage.sh` | 이벤트 단위 배열·여러 묶음 중복·출처 분리·정밀도·내구성 설정·가격 사본 |
+| 수집 통합 | `scripts/verify-ingestion.sh` | 실제 발생기·3브로커·ClickHouse 매핑, 저장 실패·재시작·재생·권한 거부·ISR·실패/적체 경고. 전원 장애·fsync 실패 자체는 미검증 |
 | 조회·배치 | `database/clickhouse/queries` | 귀속 조회 모델 확정 후 비용·월간 총액·안정 커서 쿼리 추가 |
-| 이벤트 계약 | `tests/contracts` | 스키마·format·60초 의미 규칙의 정상/위반 예제. 실제 발생기 동작은 미검증 |
+| 이벤트 계약·발생기 | `tests/contracts`, `apps/usage-generator` | 계약 예제와 실제 출력 스키마·60초 구간·재실행·ACK 재시도 검사 |
 | API 계약 | `tests/contracts`, `contracts/examples` | 선택한 OpenAPI 선언·참조·스키마·경계 예제. 전체 표준 lint 및 실제 API 응답·권한 검증은 아님 |
 | 모듈 의존 | `gradle/module-boundaries.gradle.kts`, `tests/module-boundaries` | 실제 프로젝트 의존 검사와 임시 빌드 13건. 내부 패키지·HTTP·DB 접근 검사는 아님 |
 
 계약 검사는 `./gradlew :tests:contracts:test --no-daemon`, PostgreSQL 접근 검사는 `bash scripts/verify-postgresql-access.sh`로 실행하며 `.github/workflows/contracts.yml`에서 push·PR 시 각각 수행한다. CI 등록과 별개로 병합 강제에는 저장소의 필수 상태 검사 설정이 필요하며 이번 작업에서는 변경하지 않았다. 나머지 DB·Kafka 통합 테스트는 각 LLD에 따라 추가한다.
 
-2026-09-18 계약 기반: API 불일치 2건의 실패→수정→통과를 확인하고 이벤트 45건·API 32건의 검사를 추가했다. 세부 범위와 미검증 항목은 [계약 검사 안내](../tests/contracts/README.md)를 따른다. 기존 파서의 1~60초 허용 규칙은 제품 구현 수정 전이며 새 계약 검사 통과와 구분한다.
+2026-09-18 계약 기반: API 불일치 2건의 실패→수정→통과를 확인하고 이벤트 45건·API 32건의 검사를 추가했다. 이후 수량·시간 경계 33건을 더해 총 110건이다. 이전 파서는 빌드에서 제외했으며 직접 소비는 별도 통합 검사로 확인한다. [계약 검사 안내](../tests/contracts/README.md)

@@ -2,7 +2,7 @@
 
 ## 상태
 
-부분 대체 — 아래는 독립 적재기 도입 당시 결정이다. ADR-010의 최신 목표는 신뢰 입력의 Kafka → ClickHouse 직접 소비이며, 적재·멱등성·복구 실험과 코드 전환 전이다. 현재 상태는 [구현 로드맵](../implementation-roadmap.md)을 따른다.
+부분 대체 — 아래는 독립 적재기 도입 당시 결정이다. ADR-010의 Kafka → ClickHouse 직접 소비로 전환했으며 이전 코드는 `legacy/`에 보관한다. 검증 범위와 한계는 [구현 로드맵](../implementation-roadmap.md)을 따른다.
 
 아래의 3행 적재도 2026-09-16 승인한 [이벤트 단위 원장](../clickhouse-physical-data-model.md)으로 변경한다. 본문은 과거 기록이다.
 

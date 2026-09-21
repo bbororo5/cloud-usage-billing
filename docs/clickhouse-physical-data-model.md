@@ -1,12 +1,12 @@
 # ClickHouse Physical Data Model
 
-> 상태: 이벤트 단위 원장·일반 뷰 및 측정값 배열 자료형 승인, 구현 전. 현재 SQL은 서비스별 행을 저장하는 이전 기반이다. ClickHouse 직접 소비와 귀속 조회 모델도 구현·검증 전이며, 아래 표는 구현 상태를 보증하지 않는다.
+> 상태: 이벤트 단위 원장·일반 뷰·Kafka 직접 적재 구현. 로컬 통합 검증과 미검증 범위는 [수집 구현·검증](ingestion-implementation.md)을 따른다. 회사 귀속 모델은 후속 단계다.
 
 ## 1. 목적
 
 At-least-once로 전달된 원시 사용량을 잃지 않고 저장하며, 회사–VM 점유 이력과 결합된 귀속 조회 모델을 통해 테넌트 격리된 비용 조회와 월간 재계산을 안전하게 지원한다.
 
-실행 가능한 정의는 [`database/clickhouse/schema.sql`](../database/clickhouse/schema.sql)에 두되, 이번 저장 단위 변경은 아직 반영하지 않았다. 기준 버전은 ClickHouse `26.3 LTS`다.
+원장·일반 뷰는 [`schema.sql`](../database/clickhouse/schema.sql), Kafka 입력·적재용 MV는 [`ingestion.sql`](../database/clickhouse/ingestion.sql)에 둔다. 기준 버전은 ClickHouse `26.3 LTS`다.
 
 ## 2. 선택
 
@@ -44,10 +44,10 @@ At-least-once로 전달된 원시 사용량을 잃지 않고 저장하며, 회�
 - 물리 전달 식별자: `kafka_topic + kafka_partition + kafka_offset` (재처리 시 같은 전달도 여러 행으로 저장될 수 있음)
 - 펼친 뒤의 논리 사용량 키: `event_source + event_id + meter`
 - Kafka 파티션 key는 `event_source`다. 이벤트 식별자 `event_source + event_id`와 구분한다.
-- 동일 이벤트 키의 내용은 발생기가 유지한다. 기존 `payload_hash` 열의 전환 여부는 구현 시 다루며 별도 충돌 검사는 현재 수집 범위에서 제외한다.
+- 동일 이벤트 키의 내용은 발생기가 유지한다. 내용 충돌 검사는 제외하므로 사용하지 않는 `payload_hash` 열도 제거했다.
 - 원시 원장에는 `billing_account_id`를 저장하지 않으며, BFF 계정의 접근을 원천 차단한다.
-- 일반 뷰에서 이벤트 키별 전달 사본 하나를 선택해 내용 전체를 함께 읽는다. 기존 전달 위치 기준 선택은 유지하되 SQL은 이벤트 단위로 전환한다. 적재 전 제거하거나 원시 행을 삭제하는 방식은 아니다.
-- 소비 완료는 적재 묶음의 디스크 동기화 이후다. 실제 설정·실패 동작은 [저장소 계약](storage-access-contract.md#3-이벤트-적재)에 따라 검증하며 현재 SQL에 적용 완료된 것은 아니다.
+- `usage_event` 일반 뷰는 이벤트 키별 `argMax(tuple(이벤트 전체), tuple(topic, partition, offset))`를 선택한다. 원시 사본을 삭제하지 않는다.
+- `fsync_after_insert=1`, `fsync_part_directory=1`과 적재 후 commit을 설정했다. 저장 실패의 offset 정지·복구는 테스트하며 전원 장애 검증과 구분한다.
 
 ### 중복 제거용 일반 뷰
 

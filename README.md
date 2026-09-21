@@ -2,7 +2,7 @@
 
 클라우드 사용량 이벤트를 수집·집계하고 최근 집계 기준의 월 누적 예상 금액과 월간 확정 금액을 제공하는 포트폴리오 프로젝트입니다.
 
-실행 기반을 만들었으며 Kafka → ClickHouse 직접 소비 전환과 회사 귀속 모델을 검증·설계하는 단계입니다. 목표 구조와 현재 코드는 아직 다릅니다.
+사용량 발생기 → Kafka → ClickHouse 원장·중복 제거 뷰를 구현했습니다. 현재 단계는 수집 통합·장애 검증이며 회사 귀속과 비용 API는 후속 작업입니다.
 
 ## 개발 환경
 
@@ -10,17 +10,19 @@
 - Spring Boot 4.1
 - PostgreSQL 17, Apache Kafka 4.3, ClickHouse 26.3 LTS
 
-## 로컬 실행 기반
+## 실행·검증
 
 ```bash
-./scripts/verify-foundation.sh
+./gradlew check --no-daemon
+bash scripts/verify-clickhouse-storage.sh
+bash scripts/verify-ingestion.sh
 ```
 
-애플리케이션은 `apps` 아래의 실행 단위별 Gradle 모듈로 구성한다.
+통합 검증은 독립 Docker 프로젝트를 만들고 끝나면 해당 테스트 볼륨만 삭제합니다. 실행법·장애 실험의 한계는 [수집 구현·검증](docs/ingestion-implementation.md)을 참고하세요. 기존 HTTP 접수·Java 적재기는 `legacy/`에 보관하며 빌드에서 제외했습니다.
 
 ## 문서
 
-- [C2 컨테이너 다이어그램 (SVG)](docs/diagrams/c2-containers.svg) — 운영자 관리 입력을 신뢰하는 직접 소비 목표입니다. 적재·멱등성·복구 실험과 코드 전환은 남아 있습니다.
+- [C2 컨테이너 다이어그램 (SVG)](docs/diagrams/c2-containers.svg) — 직접 소비 경로와 후속 귀속·조회·배치의 목표입니다.
 - [프로젝트 요구사항](docs/requirements.md)
 - [품질 시나리오](docs/quality-scenarios.md)
 - [Architecture Drivers](docs/architecture-driver.md)
