@@ -19,9 +19,6 @@ include(
     "tests:contracts",
     "tests:postgres-access",
     "tests:module-boundaries",
-    "libs:event-contract",
-    "apps:usage-event-api",
-    "apps:usage-ledger-writer",
     "apps:settlement-batch",
     "apps:billing-bff"
 )
