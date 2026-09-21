@@ -1,6 +1,6 @@
 # ClickHouse Physical Data Model
 
-> 상태: 2026-09-16 이벤트 단위 원장·일반 뷰 승인, 구현 전. 현재 SQL은 서비스별 행을 저장하는 이전 기반이다. ClickHouse 직접 소비와 귀속 조회 모델도 구현·검증 전이며, 아래 표는 구현 상태를 보증하지 않는다.
+> 상태: 이벤트 단위 원장·일반 뷰 및 측정값 배열 자료형 승인, 구현 전. 현재 SQL은 서비스별 행을 저장하는 이전 기반이다. ClickHouse 직접 소비와 귀속 조회 모델도 구현·검증 전이며, 아래 표는 구현 상태를 보증하지 않는다.
 
 ## 1. 목적
 
@@ -24,7 +24,20 @@ At-least-once로 전달된 원시 사용량을 잃지 않고 저장하며, 회�
 
 ## 3. 원시 사용량 원장
 
-목표 `usage_record_delivery` 한 행은 Kafka에서 전달된 이벤트 하나다. 내부의 Compute·Storage·Network 측정값 3개를 배열로 보존한다. 배열의 구체 자료형과 열 매핑은 학습·승인 후 구현한다.
+목표 `usage_record_delivery` 한 행은 Kafka에서 전달된 이벤트 하나다. 공통 정보는 일반 열에, Compute·Storage·Network 측정값 3개는 `measurements Array(Tuple(meter String, quantity UInt64, unit String))`에 보존한다.
+
+| 입력 | 원장 열 | 자료형 |
+|---|---|---|
+| `source`, `subject` | `event_source`, `event_subject` | `String` |
+| `id` | `event_id` | `UUID` |
+| `time` | `event_time` | `DateTime64(3, 'UTC')` |
+| `data[].ChargePeriodStart/End` | `charge_period_start/end` | `DateTime64(3, 'UTC')` |
+| `data[].RegionId/ResourceId/ResourceType` | `region_id/resource_id/resource_type` | `String` |
+| `data[].Meter/ConsumedQuantity/ConsumedUnit` | `measurements`의 각 튜플 | 위 배열 자료형 |
+
+세 레코드의 자원·리전·구간은 입력 계약상 같으므로 공통 열에 한 번 저장한다. 배열 순서로 서비스를 식별하지 않고 `meter`를 사용한다. Kafka 전달 위치와 `ingested_at`은 수집 측 메타데이터로 추가하며 발생기 입력에는 넣지 않는다.
+
+수량은 `0`~`18446744073709551615`, 시각은 소수 초 최대 3자리로 입력 계약과 맞췄다. 입력 계약 테스트는 이 범위를 검사하며 실제 ClickHouse 파싱·배열 매핑·저장 검증을 대신하지 않는다. 날짜의 저장 가능 범위도 적재 연결 검증에서 확인한다.
 
 - 재전송이 없다면 월 8.6억 이벤트는 원장 8.6억 행이다. 읽을 때 모두 펼치면 약 25.8억 논리 사용량 항목이 된다. 재전달 사본은 원장 행 수를 늘린다.
 - 이벤트 중복 제거 키: `event_source + event_id`
