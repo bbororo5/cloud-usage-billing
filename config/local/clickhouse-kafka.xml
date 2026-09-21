@@ -1,0 +1,9 @@
+<clickhouse>
+    <kafka>
+        <security_protocol>sasl_plaintext</security_protocol>
+        <sasl_mechanism>PLAIN</sasl_mechanism>
+        <sasl_username>ingestion</sasl_username>
+        <sasl_password>local-ingestion-only</sasl_password>
+        <auto_offset_reset>error</auto_offset_reset>
+    </kafka>
+</clickhouse>
