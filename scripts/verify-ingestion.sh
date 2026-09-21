@@ -98,21 +98,28 @@ for table in usage_record_delivery usage_event usage_kafka; do
 done
 echo 'PASS BFF cannot access raw events, deduplication view or Kafka table'
 
+# Isolate topic permission from the independent cluster IdempotentWrite permission.
+# Only this negative probe disables idempotence; the real generator always enables it.
 # An authenticated producer cannot write another topic; an ingestion identity cannot produce.
 kafka kafka-topics.sh --create --topic forbidden --partitions 1 --replication-factor 3
 for pair in 'kafka-producer.properties forbidden' 'kafka-consumer.properties usage-events.v1'; do
   read -r config topic <<< "$pair"
   denial="$(printf '{}\n' | "${dc[@]}" exec -T kafka-1 /opt/kafka/bin/kafka-console-producer.sh \
     --bootstrap-server kafka-1:9092 --producer.config "/config/$config" --topic "$topic" \
+    --producer-property enable.idempotence=false \
     --producer-property max.block.ms=5000 --producer-property delivery.timeout.ms=5000 \
     --producer-property request.timeout.ms=1000 2>&1 || true)"
-  [[ "$denial" == *TopicAuthorizationException* ]]
+  [[ "$denial" == *TopicAuthorizationException* ]] || {
+    echo "Expected topic-write denial for $config on $topic; received: $denial" >&2; exit 1;
+  }
 done
 denial="$(printf '{}\n' | "${dc[@]}" exec -T kafka-1 /opt/kafka/bin/kafka-console-producer.sh \
   --bootstrap-server kafka-1:9092 --producer.config /config/kafka-producer.properties --topic usage-events.v1 \
   --producer-property 'sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="generator" password="wrong";' \
   --producer-property max.block.ms=5000 2>&1 || true)"
-[[ "$denial" == *SaslAuthenticationException* ]]
+[[ "$denial" == *SaslAuthenticationException* ]] || {
+  echo "Expected credential rejection; received: $denial" >&2; exit 1;
+}
 echo 'PASS broker authentication and least-privilege topic ACLs'
 
 wait_isr() {
