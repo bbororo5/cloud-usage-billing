@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -25,6 +26,61 @@ class EventContractTest {
         record(event, 1).put("ConsumedQuantity", 0);
         record(event, 2).put("ConsumedQuantity", 0);
         assertThat(EventContractOracle.violations(event)).isEmpty();
+    }
+
+    @TestFactory
+    Stream<DynamicTest> unsignedQuantityBoundariesAreValidWithoutRounding() {
+        return Stream.of(1, 2).flatMap(index -> Stream.of(
+                "9223372036854775807", "9223372036854775808",
+                "18446744073709551614", "18446744073709551615")
+                .map(value -> dynamicTest("record " + index + " quantity " + value, () -> {
+                    ObjectNode event = example();
+                    record(event, index).put("ConsumedQuantity", new BigInteger(value));
+                    assertThat(EventContractOracle.violations(event)).isEmpty();
+                })));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> unsignedQuantityOverflowFailsForEveryMeter() {
+        return Stream.of(0, 1, 2).map(index -> dynamicTest("record " + index + " overflow", () -> {
+            ObjectNode event = example();
+            record(event, index).put("ConsumedQuantity", new BigInteger("18446744073709551616"));
+            assertThat(EventContractOracle.violations(event)).contains("SCHEMA");
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> timestampsAcceptUpToThreeFractionDigits() {
+        return Stream.of("Z", "+00:00").flatMap(zone -> Stream.of("", ".1", ".12", ".123")
+                .map(fraction -> dynamicTest("time precision " + fraction + zone, () -> {
+                    ObjectNode event = example();
+                    String start = "2026-08-12T00:00:00" + fraction + zone;
+                    String end = "2026-08-12T00:01:00" + fraction + zone;
+                    event.put("time", end);
+                    for (int i = 0; i < 3; i++) {
+                        record(event, i).put("ChargePeriodStart", start);
+                        record(event, i).put("ChargePeriodEnd", end);
+                    }
+                    assertThat(EventContractOracle.violations(event)).isEmpty();
+                })));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> timestampsRejectExcessPrecisionIncludingTrailingZero() {
+        return Stream.of(".1234Z", ".1230Z").flatMap(fraction -> {
+            Stream<Change> envelope = Stream.of(change("time", e ->
+                    e.put("time", "2026-08-12T00:01:00" + fraction)));
+            Stream<Change> records = Stream.of(0, 1, 2).flatMap(index ->
+                    Stream.of("ChargePeriodStart", "ChargePeriodEnd").map(field ->
+                            change("record " + index + " " + field, e -> record(e, index)
+                                    .put(field, "2026-08-12T00:01:00" + fraction))));
+            return Stream.concat(envelope, records).map(change ->
+                    dynamicTest(change.name() + " precision " + fraction, () -> {
+                        ObjectNode event = example();
+                        change.apply().accept(event);
+                        assertThat(EventContractOracle.violations(event)).contains("SCHEMA");
+                    }));
+        });
     }
 
     @Test
