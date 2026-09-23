@@ -37,7 +37,7 @@ docker compose run --rm generator --config /config/kafka-producer.properties \
 bash scripts/check-ingestion.sh
 ```
 
-`--pace-ms` 기본값은 60000이며 0은 빠른 재생이다. `--vms`로 독립 출처 여러 개를 생성할 수 있다. 실행 계획은 종료된 점유 구간이며 잔여 60초 미만을 버린다. 내부 자원 할당의 점유 제어·실제 VM 측정은 구현하지 않는다. 재시작은 `start-ingestion.sh`를 옵션 없이 실행한다. 기존 그룹의 offset 초기화는 거부한다.
+`--pace-ms` 기본값은 60000이며 0은 빠른 재생이다. `--vms`로 독립 출처 여러 개를 생성할 수 있다. 실행 계획은 종료된 점유 구간이며 잔여 60초 미만을 버린다. 실제 VM 제어·측정은 외부 책임으로 구현하지 않는다. 외부 점유 사실 입력과 내부 이력 반영은 후속 범위다. 재시작은 `start-ingestion.sh`를 옵션 없이 실행한다. 기존 그룹의 offset 초기화는 거부한다.
 
 로컬 전용 SASL/PLAIN·ACL을 사용하며 Kafka·ClickHouse 포트는 호스트에 공개하지 않는다. 발생기에는 자기 자격증명만 마운트한다. 운영 배포에는 TLS·비밀 관리가 필요하며 공개된 로컬 비밀번호를 사용하면 안 된다. 모니터 명령은 운영자 자격을 별도 마운트하고 소비 위치를 변경하지 않는다.
 
