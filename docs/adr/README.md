@@ -14,6 +14,7 @@
 | [008](0008-tenant-neutral-usage-ingestion.md) | 과금 비인지 사용량 수집과 후행 귀속 | VM 이벤트 경계 재검토 후 | 승인 |
 | [009](0009-occupancy-event-recovery-and-cache-consistency.md) | 점유 변경의 Kafka 기반 복구와 캐시 일관성 | 점유 생명주기 기획 후 | 승인·외부 제어 경계 보완·구현 전 |
 | [010](0010-direct-kafka-ingestion.md) | 사용량 발생기의 Kafka 직접 발행 | 접수 계층 단순화 검토 후 | 승인·직접 소비 구현 |
+| [011](0011-occupancy-attribution-worker.md) | 점유 이력·사용량 귀속의 워커 분리 | 후행 귀속 실행 구조 확정 | 승인·구현 전 |
 
 점유 캐시의 일관성 원칙은 ADR-009에서 정한다. 캐시 제품과 배포 환경은 구체적인 구현 선택이 필요할 때 결정한다.
 
