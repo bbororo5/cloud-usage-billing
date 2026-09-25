@@ -8,7 +8,7 @@ create table if not exists billing.occupancy_stream (
     version bigint not null default 0 check(version >= 0),
     next_retry_at timestamptz not null default now(), last_attempt_at timestamptz not null default '-infinity',
     attempts integer not null default 0, waiting_since timestamptz,
-    check (not initialized or (subject is not null and baseline_at is not null and confirmed_through >= baseline_at))
+    check (not initialized or (subject is not null and baseline_at is not null and confirmed_through is not null and confirmed_through >= baseline_at))
 );
 create table if not exists billing.occupancy_event (
     source text not null references billing.occupancy_stream(source), id uuid not null,
