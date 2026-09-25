@@ -15,8 +15,14 @@ dependencies {
 
 sourceSets.main { resources.srcDir(rootProject.file("contracts")) }
 tasks.test {
-    useJUnitPlatform { excludeTags("integration", "kafka") }
+    useJUnitPlatform { excludeTags("integration", "kafka", "attribution") }
     systemProperty("contracts.dir", rootProject.file("contracts").absolutePath)
+}
+tasks.register<Test>("attributionTest") {
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform { includeTags("attribution") }
+    outputs.upToDateWhen { false }
 }
 tasks.register<Test>("integrationTest") {
     testClassesDirs = sourceSets.test.get().output.classesDirs
