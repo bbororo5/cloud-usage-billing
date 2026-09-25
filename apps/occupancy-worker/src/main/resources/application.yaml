@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: occupancy-worker
+  main:
+    web-application-type: none
+  datasource:
+    url: ${OCCUPANCY_DB_URL:jdbc:postgresql://localhost:5432/billing}
+    username: billing_occupancy
+    password: ${OCCUPANCY_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 6
+      connection-timeout: 5000
+occupancy:
+  kafka-config: ${OCCUPANCY_KAFKA_CONFIG:}
+  topic: ${OCCUPANCY_TOPIC:instance-occupancy-events.v1}
+management:
+  endpoints:
+    enabled-by-default: false

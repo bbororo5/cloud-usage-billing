@@ -21,14 +21,16 @@ tasks.test {
 tasks.register<Test>("integrationTest") {
     testClassesDirs = sourceSets.test.get().output.classesDirs
     classpath = sourceSets.test.get().runtimeClasspath
-    useJUnitPlatform { includeTags("integration") }
+    useJUnitPlatform { includeTags("integration"); excludeTags("kafka") }
     outputs.upToDateWhen { false }
     systemProperty("contracts.dir", rootProject.file("contracts").absolutePath)
 }
 tasks.register<Test>("kafkaTest") {
+    dependsOn(tasks.named("bootJar"))
     testClassesDirs = sourceSets.test.get().output.classesDirs
     classpath = sourceSets.test.get().runtimeClasspath
     useJUnitPlatform { includeTags("kafka") }
     outputs.upToDateWhen { false }
     systemProperty("contracts.dir", rootProject.file("contracts").absolutePath)
+    systemProperty("worker.jar", layout.buildDirectory.file("libs/occupancy-worker-${project.version}.jar").get().asFile.absolutePath)
 }
