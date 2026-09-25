@@ -5,5 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class OccupancyWorkerApplication {
-    public static void main(String[] args) { SpringApplication.run(OccupancyWorkerApplication.class, args); }
+  public static void main(String[] args) {
+    SpringApplication.run(OccupancyWorkerApplication.class, args);
+  }
 }
