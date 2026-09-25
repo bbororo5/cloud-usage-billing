@@ -2,7 +2,7 @@
 
 ## 1. 결론·범위
 
-구현자 참고 문서. **서비스는 실행·트랜잭션을 조율하고, 순수 규칙은 상태 전이를 판단하며, 어댑터는 외부 기술을 담당한다.** [LLD](occupancy-history-lld.md)의 승인된 수신함·원자적 반영·버전 캐시를 유지한다. 사용자 감독 경계는 C3이며 아래 C4 파일·코드는 에이전트가 구체화하는 표현안이다. 파일별 재승인 대상이 아니며 아직 생성·컴파일하지 않았다. 구현 순서·미완료 범위는 [인계 문서](occupancy-history-implementation-plan.md)를 따른다.
+구현자 참고 문서. **서비스는 실행·트랜잭션을 조율하고, 순수 규칙은 상태 전이를 판단하며, 어댑터는 외부 기술을 담당한다.** [LLD](occupancy-history-lld.md)의 승인된 수신함·원자적 반영·버전 캐시를 유지한다. 사용자 감독 경계는 C3이며 아래 C4 파일·코드는 에이전트가 구체화하는 표현안이다. 파일별 재승인 대상은 아니다. 이후 구현·컴파일·검증을 마쳤으며 아래 파일명·의사코드는 설계 당시 설명안이다. 실제 타입 배치는 [워커 코드](../apps/occupancy-worker/src/main/java/io/github/bbororo5/cloudbilling/worker/occupancyhistory)를 따른다. 구현 순서·미완료 범위는 [인계 문서](occupancy-history-implementation-plan.md)를 따른다.
 
 C3는 점유·귀속 워커 하나를 확대한다. 귀속 모듈은 위치만 표시하고 이번에는 점유 이력 구성요소를 상세화한다. 파일·메서드는 C3보다 아래 코드 수준이므로 별도로 제시한다.
 
@@ -64,7 +64,7 @@ flowchart TB
 
 ## 4. 파일과 메서드 배치
 
-제안 위치는 `apps/occupancy-worker/src/main/java/io/github/bbororo5/cloudbilling/worker/occupancyhistory/`다. 아직 Gradle 모듈을 추가한 것은 아니다. 표의 중괄호는 파일 묶음 표기다.
+제안 위치는 `apps/occupancy-worker/src/main/java/io/github/bbororo5/cloudbilling/worker/occupancyhistory/`다. 해당 Gradle 모듈을 추가했다. 표의 중괄호는 파일 묶음 표기다.
 
 | 패키지 / 파일 | 구체적인 논리 단위 |
 |---|---|

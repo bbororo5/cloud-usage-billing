@@ -2,7 +2,7 @@
 
 ## 1. 상태·범위
 
-점유 이력 모듈의 구현 계획 기준. **내구 수신함 뒤 commit·VM별 적용 트랜잭션·DB 버전 확인 기반 로컬 캐시는 승인된 결정**이다. 공개 인터페이스 → 입력·상태 공간/오라클 → 내부 책임·협력 → 패턴 순으로 정리했다. 사용자 감독 범위는 C3까지이며 C4 파일·타입 표현은 에이전트가 담당한다. 제품 코드·DDL·자동 테스트는 아직 없다. [구현 준비·남은 범위](occupancy-history-implementation-plan.md), [HLD](occupancy-attribution-hld.md), [기존 이벤트 계약](event-contract.md)을 따른다.
+점유 이력 모듈의 구현 계획 기준. **내구 수신함 뒤 commit·VM별 적용 트랜잭션·DB 버전 확인 기반 로컬 캐시는 승인된 결정**이다. 공개 인터페이스 → 입력·상태 공간/오라클 → 내부 책임·협력 → 패턴 순으로 정리했다. 사용자 감독 범위는 C3까지이며 C4 파일·타입 표현은 에이전트가 담당한다. 코드·DDL·자동 테스트를 구현했다. 실행법·검증 한계는 [워커 README](../apps/occupancy-worker/README.md)를 따른다. [구현 준비·남은 범위](occupancy-history-implementation-plan.md), [HLD](occupancy-attribution-hld.md), [기존 이벤트 계약](event-contract.md)을 따른다.
 
 입구는 점유 사건 수신, 출구는 동일 버전의 점유 이력·확인 범위다. 사용량 귀속·가격 계산·BFF·월간 확정은 이 모듈이 소유하지 않는다. VM 제어와 발행자의 미전송 사실 보존도 외부 책임이다.
 
@@ -14,7 +14,7 @@
 
 CloudEvents Structured JSON을 유지한다. `specversion=1.0`, `source`는 기존 VM 출처, `subject=instances/{ResourceId}`, `id`는 재전송 때 유지하는 UUID다. `source+id`가 사건 식별자이며 Kafka key는 `source`다. VM 출처와 subject의 등록 관계는 초기 등록 후 불변이다. `time`은 실제 사건 시각이며 수신 시각으로 대체하지 않는다.
 
-`type`은 `io.github.bbororo5.cloudusage.instance.occupancy.` 뒤에 아래 값을 붙인다. `datacontenttype=application/json`; `dataschema`는 구현 시 추가할 `contracts/v1/instance-occupancy-event.schema.json`의 저장소 절대 URI를 사용한다. 현재 사용량 스키마를 수정하지 않는다.
+`type`은 `io.github.bbororo5.cloudusage.instance.occupancy.` 뒤에 아래 값을 붙인다. `datacontenttype=application/json`; `dataschema`는 추가한 `contracts/v1/instance-occupancy-event.schema.json`의 저장소 절대 URI를 사용한다. 기존 사용량 스키마는 수정하지 않았다.
 
 | type 접미사 | data의 필수 필드 | 조건 |
 |---|---|---|
@@ -57,7 +57,7 @@ RetryIssueCommand는 requestId·issueId·reason이다. OperatorContext는 클라
 
 Kafka 라이브러리의 ConsumerRecord를 api/domain에 넘기지 않는다. 사건이 아직 없으면 Idle, 후속 번호만 있어 앞이 비면 Waiting이다. 다음 version/sequence의 정수 상한 도달 시 wraparound하지 않고 오류로 보류한다.
 
-snapshot은 VM 출처·subject·기준 시각·확인 완료 시각·version·겹치는 점유 구간 목록을 포함한다. from < to인 구간만 허용하며 기준 이전·확인 범위 초과는 NotReady다. 확인된 유휴 구간은 Confirmed와 빈 목록으로 반환한다. DB 장애는 StorageUnavailable 예외로 구분하고 빈 이력으로 위장하지 않는다. 이미 반영된 동일 사건은 기존 결과를 재사용한다.
+snapshot은 VM 출처·subject·기준 시각·확인 완료 시각·version·겹치는 점유 구간 목록을 포함한다. from < to인 구간만 허용하며 기준 이전·확인 범위 초과는 NotReady다. 확인된 유휴 구간은 Confirmed와 빈 목록으로 반환한다. DB 장애는 HistoryUnavailable 예외로 구분하고 빈 이력으로 위장하지 않는다. 이미 반영된 동일 사건은 기존 결과를 재사용한다.
 
 `retryIssue`는 원본을 수정하거나 오류를 해결 완료로 바꾸지 않는다. 고객 Admin/Viewer가 아닌 내부 운영 주체만 호출하며 사유를 기록한다. 실제 이력 정정은 귀속 공개 차단과 연동해야 하므로 이 포트에서 임의 수정하지 않는다.
 
@@ -265,7 +265,7 @@ Kafka lag와 별도로 수신함 미반영 수·최장 대기 시간·VM 확인 
 
 승인한 핵심은 **내구 수신함 뒤 commit**, **VM별 적용 트랜잭션**, **DB 버전을 확인하는 로컬 캐시**다. ADR-009·저장소 계약의 점유 소비 완료 기준을 갱신했다. 귀속 공개·정정의 연결 설계나 제품 구현 전체를 승인한 것으로 확대하지 않는다.
 
-**점유 이력 모듈의 핵심 경로는 구현 계획 수립 가능**하다. [실행 계획](occupancy-history-implementation-plan.md)의 작은 단위로 계약·실패 테스트부터 진행한다. C4 파일명·타입·메서드마다 사용자 승인을 반복하지 않되 외부 계약·데이터 소유권·격리·내구성·공개 조건의 변경은 C3 재검토 대상이다. 이번 설계 정리는 제품 구현 명령으로 간주하지 않는다.
+**점유 이력 모듈의 핵심 경로는 구현 계획 수립 가능**하다. [실행 계획](occupancy-history-implementation-plan.md)의 작은 단위로 계약·실패 테스트부터 진행한다. C4 파일명·타입·메서드마다 사용자 승인을 반복하지 않되 외부 계약·데이터 소유권·격리·내구성·공개 조건의 변경은 C3 재검토 대상이다. 이후 별도 구현 승인을 받아 핵심 경로를 구현·검증했다. 실제 운영 연결·귀속 모듈은 아래 경계를 유지한다.
 
 미완료 연결 과제는 귀속 공개·정정 경합, 실제 운영 인증·알림 채널, 전체 월 정산이다. 이 모듈은 신뢰된 운영 문맥·알림 포트를 정의하고 무권한·실패를 검사하지만 외부 연결 구현까지 완료했다고 주장하지 않는다. 구조 검사는 `외부 귀속 → api만`, `domain → JDK만`, `application → adapter 참조 금지`를 검사하도록 기존 모듈 경계 테스트를 확장한다.
 
