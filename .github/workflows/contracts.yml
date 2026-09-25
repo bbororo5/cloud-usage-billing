@@ -62,3 +62,5 @@ jobs:
           cache: gradle
       - name: Verify occupancy storage, isolation and process recovery
         run: OCCUPANCY_KAFKA_TESTS=true bash scripts/verify-occupancy.sh
+      - name: Verify authenticated local occupancy stack
+        run: bash scripts/verify-occupancy-stack.sh

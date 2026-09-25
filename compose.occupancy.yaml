@@ -1,0 +1,29 @@
+# Optional local occupancy slice: docker compose -f compose.yaml -f compose.occupancy.yaml ...
+services:
+  postgres:
+    volumes:
+      - ./database/postgresql/occupancy.sql:/docker-entrypoint-initdb.d/004-occupancy.sql:ro
+  occupancy-init:
+    image: apache/kafka:4.3.1
+    depends_on:
+      kafka-1: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+    volumes:
+      - ./config/local:/config:ro
+      - ./scripts/init-occupancy-kafka.sh:/init.sh:ro
+    entrypoint: [bash, /init.sh]
+  occupancy-worker:
+    image: eclipse-temurin:21-jre
+    depends_on:
+      postgres: {condition: service_healthy}
+      occupancy-init: {condition: service_completed_successfully}
+    environment:
+      OCCUPANCY_DB_URL: jdbc:postgresql://postgres:5432/billing
+      OCCUPANCY_DB_PASSWORD: local-dev-only
+      OCCUPANCY_KAFKA_CONFIG: /config/kafka-occupancy-worker.properties
+    volumes:
+      - ./apps/occupancy-worker/build/libs/occupancy-worker-0.1.0-SNAPSHOT.jar:/app/worker.jar:ro
+      - ./config/local:/config:ro
+    command: [java, -jar, /app/worker.jar]
+    stop_grace_period: 65s

@@ -20,7 +20,7 @@ x-broker-env: &broker-env
   KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
   KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
   KAFKA_SASL_MECHANISM_CONTROLLER_PROTOCOL: PLAIN
-  KAFKA_LISTENER_NAME_INTERNAL_PLAIN_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="local-admin-only" user_admin="local-admin-only" user_generator="local-generator-only" user_ingestion="local-ingestion-only";'
+  KAFKA_LISTENER_NAME_INTERNAL_PLAIN_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="local-admin-only" user_admin="local-admin-only" user_generator="local-generator-only" user_ingestion="local-ingestion-only" user_occupancy-worker="local-occupancy-worker-only" user_occupancy-infra="local-occupancy-infra-only";'
   KAFKA_LISTENER_NAME_CONTROLLER_PLAIN_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="admin" password="local-admin-only" user_admin="local-admin-only";'
   KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
   KAFKA_SUPER_USERS: User:admin
