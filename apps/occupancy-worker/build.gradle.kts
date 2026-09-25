@@ -9,6 +9,7 @@ dependencies {
     runtimeOnly(libs.postgresql)
     testImplementation(libs.spring.boot.test)
     testImplementation("com.tngtech.archunit:archunit:1.4.1")
+    testImplementation("org.testcontainers:kafka:1.21.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

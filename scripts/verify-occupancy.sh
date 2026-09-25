@@ -18,3 +18,6 @@ done
 occupancy_port="$(docker port "$occupancy_container" 5432/tcp)"
 export OCCUPANCY_TEST_URL="jdbc:postgresql://127.0.0.1:${occupancy_port##*:}/billing"
 ./gradlew :apps:occupancy-worker:integrationTest --no-daemon "$@"
+if [[ "${OCCUPANCY_KAFKA_TESTS:-false}" == true ]]; then
+  ./gradlew :apps:occupancy-worker:kafkaTest --no-daemon
+fi
