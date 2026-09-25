@@ -1,0 +1,17 @@
+# Add after compose.yaml and compose.occupancy.yaml. No additional worker/server is created.
+services:
+  postgres:
+    volumes:
+      - ./database/postgresql/attribution.sql:/docker-entrypoint-initdb.d/005-attribution.sql:ro
+  clickhouse:
+    volumes:
+      - ./database/clickhouse/attribution.sql:/docker-entrypoint-initdb.d/004-attribution.sql:ro
+  occupancy-worker:
+    depends_on:
+      clickhouse: {condition: service_healthy}
+    environment:
+      ATTRIBUTION_ENABLED: 'true'
+      ATTRIBUTION_DB_URL: jdbc:postgresql://postgres:5432/billing
+      ATTRIBUTION_DB_PASSWORD: local-dev-only
+      ATTRIBUTION_CLICKHOUSE_URL: http://clickhouse:8123
+      ATTRIBUTION_CLICKHOUSE_PASSWORD: local-attribution-only

@@ -19,10 +19,12 @@ tasks.test {
     systemProperty("contracts.dir", rootProject.file("contracts").absolutePath)
 }
 tasks.register<Test>("attributionTest") {
+    dependsOn(tasks.named("bootJar"))
     testClassesDirs = sourceSets.test.get().output.classesDirs
     classpath = sourceSets.test.get().runtimeClasspath
     useJUnitPlatform { includeTags("attribution") }
     outputs.upToDateWhen { false }
+    systemProperty("worker.jar", layout.buildDirectory.file("libs/occupancy-worker-${project.version}.jar").get().asFile.absolutePath)
 }
 tasks.register<Test>("integrationTest") {
     testClassesDirs = sourceSets.test.get().output.classesDirs

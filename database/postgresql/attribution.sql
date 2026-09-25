@@ -90,7 +90,14 @@ create table if not exists billing.attribution_action (
   result text not null,created_at timestamptz not null default now(),
   foreign key(source,event_id) references billing.attribution_job(source,event_id)
 );
+alter table billing.attribution_job add column if not exists discovered_at timestamptz not null default now();
+create table if not exists billing.attribution_transition (
+  transition_id uuid primary key, source text not null,event_id uuid not null,token uuid not null,
+  decision text not null,revision uuid,created_at timestamptz not null default now(),
+  foreign key(source,event_id) references billing.attribution_job(source,event_id)
+);
 create index if not exists attribution_due on billing.attribution_job(due_at) where state not in ('APPROVED','ERROR');
 grant select,insert,update on billing.attribution_scan,billing.attribution_job,billing.attribution_issue to billing_attribution;
 grant select,insert on billing.attribution_attempt,billing.attribution_approval,billing.attribution_action to billing_attribution;
+grant select,insert on billing.attribution_transition to billing_attribution;
 commit;

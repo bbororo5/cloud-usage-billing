@@ -64,3 +64,16 @@ jobs:
         run: OCCUPANCY_KAFKA_TESTS=true bash scripts/verify-occupancy.sh
       - name: Verify authenticated local occupancy stack
         run: bash scripts/verify-occupancy-stack.sh
+
+  attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Verify attribution, permissions and process recovery
+        run: bash scripts/verify-attribution.sh
