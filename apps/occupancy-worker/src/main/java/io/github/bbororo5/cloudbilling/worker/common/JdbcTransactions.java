@@ -1,6 +1,5 @@
-package io.github.bbororo5.cloudbilling.worker.occupancyhistory.adapter.postgres;
+package io.github.bbororo5.cloudbilling.worker.common;
 
-import io.github.bbororo5.cloudbilling.worker.occupancyhistory.port.TransactionRunner;
 import java.sql.*;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
@@ -63,7 +62,7 @@ public final class JdbcTransactions implements TransactionRunner {
 
   public static final class StorageFailure extends RuntimeException {
     public StorageFailure(SQLException cause) {
-      super("Occupancy storage failure", cause);
+      super("Worker storage failure", cause);
     }
   }
 }

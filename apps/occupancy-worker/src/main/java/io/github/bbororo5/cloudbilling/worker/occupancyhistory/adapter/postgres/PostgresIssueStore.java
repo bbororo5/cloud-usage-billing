@@ -1,5 +1,8 @@
 package io.github.bbororo5.cloudbilling.worker.occupancyhistory.adapter.postgres;
 
+import io.github.bbororo5.cloudbilling.worker.common.JdbcTransactions;
+import io.github.bbororo5.cloudbilling.worker.common.TransactionRunner;
+
 import io.github.bbororo5.cloudbilling.worker.occupancyhistory.api.IssueRetry.*;
 import io.github.bbororo5.cloudbilling.worker.occupancyhistory.port.IssueStore;
 import java.util.*;

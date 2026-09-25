@@ -1,8 +1,10 @@
 package io.github.bbororo5.cloudbilling.worker;
 
+import io.github.bbororo5.cloudbilling.worker.common.JdbcTransactions;
+import io.github.bbororo5.cloudbilling.worker.common.TransactionRunner;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.github.bbororo5.cloudbilling.worker.occupancyhistory.adapter.postgres.JdbcTransactions;
 import io.github.bbororo5.cloudbilling.worker.occupancyhistory.adapter.postgres.PostgresDiagnostics;
 import org.junit.jupiter.api.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
