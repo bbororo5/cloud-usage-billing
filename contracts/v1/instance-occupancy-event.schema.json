@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bbororo5/cloud-usage-billing/blob/main/contracts/v1/instance-occupancy-event.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "specversion",
+    "source",
+    "subject",
+    "id",
+    "type",
+    "time",
+    "datacontenttype",
+    "dataschema",
+    "data"
+  ],
+  "properties": {
+    "specversion": {
+      "const": "1.0"
+    },
+    "source": {
+      "type": "string",
+      "format": "uri",
+      "minLength": 1
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^instances/[^\\s/]+$"
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "type": {
+      "enum": [
+        "io.github.bbororo5.cloudusage.instance.occupancy.initialized.v1",
+        "io.github.bbororo5.cloudusage.instance.occupancy.started.v1",
+        "io.github.bbororo5.cloudusage.instance.occupancy.ended.v1",
+        "io.github.bbororo5.cloudusage.instance.occupancy.confirmed.v1"
+      ]
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "datacontenttype": {
+      "const": "application/json"
+    },
+    "dataschema": {
+      "const": "https://github.com/bbororo5/cloud-usage-billing/blob/main/contracts/v1/instance-occupancy-event.schema.json"
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "io.github.bbororo5.cloudusage.instance.occupancy.initialized.v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sequence",
+              "baselineAt",
+              "initialOccupancy"
+            ],
+            "properties": {
+              "sequence": {
+                "const": 1
+              },
+              "baselineAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$"
+              },
+              "initialOccupancy": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "occupancyId",
+                      "billingAccountId",
+                      "startedAt"
+                    ],
+                    "properties": {
+                      "occupancyId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "billingAccountId": {
+                        "type": "string",
+                        "pattern": "\\S"
+                      },
+                      "startedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "io.github.bbororo5.cloudusage.instance.occupancy.started.v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sequence",
+              "occupancyId",
+              "billingAccountId"
+            ],
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9223372036854775807
+              },
+              "occupancyId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "billingAccountId": {
+                "type": "string",
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "io.github.bbororo5.cloudusage.instance.occupancy.ended.v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sequence",
+              "occupancyId"
+            ],
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9223372036854775807
+              },
+              "occupancyId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "io.github.bbororo5.cloudusage.instance.occupancy.confirmed.v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sequence",
+              "confirmedThrough"
+            ],
+            "properties": {
+              "sequence": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9223372036854775807
+              },
+              "confirmedThrough": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,3})?(Z|[+-]\\d{2}:\\d{2})$"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

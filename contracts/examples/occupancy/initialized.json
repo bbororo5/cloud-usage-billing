@@ -1,0 +1,15 @@
+{
+  "specversion": "1.0",
+  "source": "urn:vm:a",
+  "subject": "instances/a",
+  "id": "00000000-0000-0000-0000-000000000001",
+  "type": "io.github.bbororo5.cloudusage.instance.occupancy.initialized.v1",
+  "time": "2026-09-01T10:00:00Z",
+  "datacontenttype": "application/json",
+  "dataschema": "https://github.com/bbororo5/cloud-usage-billing/blob/main/contracts/v1/instance-occupancy-event.schema.json",
+  "data": {
+    "sequence": 1,
+    "baselineAt": "2026-09-01T10:00:00Z",
+    "initialOccupancy": null
+  }
+}

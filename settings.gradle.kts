@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 rootProject.name = "cloud-usage-billing"
 
 include(
+    "apps:occupancy-worker",
     "apps:usage-generator",
     "tests:contracts",
     "tests:postgres-access",
