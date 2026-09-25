@@ -1,10 +1,8 @@
 package io.github.bbororo5.cloudbilling.worker;
 
-import io.github.bbororo5.cloudbilling.worker.common.JdbcTransactions;
-import io.github.bbororo5.cloudbilling.worker.common.TransactionRunner;
-
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.github.bbororo5.cloudbilling.worker.common.TransactionRunner;
 import io.github.bbororo5.cloudbilling.worker.occupancyhistory.adapter.kafka.*;
 import io.github.bbororo5.cloudbilling.worker.occupancyhistory.application.ReceiptService;
 import java.time.Duration;

@@ -1,8 +1,6 @@
 package io.github.bbororo5.cloudbilling.worker.occupancyhistory.adapter.postgres;
 
 import io.github.bbororo5.cloudbilling.worker.common.JdbcTransactions;
-import io.github.bbororo5.cloudbilling.worker.common.TransactionRunner;
-
 import java.util.*;
 
 public final class PostgresDiagnostics {

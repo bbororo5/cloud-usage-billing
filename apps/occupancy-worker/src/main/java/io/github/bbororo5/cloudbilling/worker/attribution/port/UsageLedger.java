@@ -5,5 +5,6 @@ import java.util.*;
 
 public interface UsageLedger {
   Optional<Usage.Key> upperBound();
+
   List<Usage> page(Usage.Key after, Usage.Key upper, int limit);
 }
