@@ -25,6 +25,33 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 @Tag("attribution")
 class AttributionFlowTest extends StoreFixture {
   @Test
+  void lockedCallbackFailureRollsBackItsWrites() {
+    register(usage);
+    var claim = atx.write(() -> work.claim(30)).orElseThrow();
+    var prepared = new Prepared(UUID.randomUUID(), usage, "x", occupancy, 5);
+    var query =
+        new io.github.bbororo5.cloudbilling.worker.occupancyhistory.api.HistoryReader.Query(
+            source, usage.from(), usage.to());
+    var failure = new IllegalStateException("after preparation");
+    assertSame(
+        failure,
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                guard.withLockedSnapshot(
+                    query,
+                    snapshot -> {
+                      assertTrue(work.prepare(claim, prepared));
+                      throw failure;
+                    })));
+    // A new preparation succeeds only if both the job update and immutable attempt rolled back.
+    boolean preparedAfterRollback =
+        guard.withLockedSnapshot(query, snapshot -> work.prepare(claim, prepared));
+    assertTrue(preparedAfterRollback);
+    assertTrue(atx.read(() -> work.approved(usage.key())).isEmpty());
+  }
+
+  @Test
   void approvalRejectsPayloadDifferentFromImmutablePreparation() {
     register(usage);
     var claim = atx.write(() -> work.claim(30)).orElseThrow();
