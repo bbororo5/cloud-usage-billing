@@ -17,7 +17,7 @@ public final class PostgresHistoryGuard implements HistoryGuard {
     this.tx = tx;
   }
 
-  public <T> T locked(Query query, Function<Result, T> work) {
+  public <T> T withLockedSnapshot(Query query, Function<Result, T> work) {
     return tx.write(
         () -> {
           Result result;

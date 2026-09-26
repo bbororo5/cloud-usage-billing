@@ -96,7 +96,7 @@ class ApprovalBoundaryTest {
                 ((Function<HistoryReader.Result, Object>) a.getArgument(1))
                     .apply(confirmed(7, "A")))
         .when(guard)
-        .locked(any(), any());
+        .withLockedSnapshot(any(), any());
     service = new AttributionService(tx, store, history, guard, ledger);
   }
 

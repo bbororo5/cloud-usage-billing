@@ -30,7 +30,7 @@ final class ApprovalService {
       tx.write(() -> store.defer(claim, new AttributionRules.Failed("RESULT_CONFLICT")));
       return;
     }
-    guard.locked(
+    guard.withLockedSnapshot(
         HistoryEvidence.query(result.usage()),
         history -> {
           if (!store.owns(claim)) return false;

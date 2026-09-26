@@ -28,7 +28,7 @@ public final class ApprovedReader implements AttributionReader {
       if (candidate.isEmpty() || !candidate.get().account().equals(query.account()))
         return new Withheld();
       var p = candidate.get();
-      return guard.locked(
+      return guard.withLockedSnapshot(
           HistoryEvidence.query(p.usage()),
           h -> {
             var current = store.approved(key);
