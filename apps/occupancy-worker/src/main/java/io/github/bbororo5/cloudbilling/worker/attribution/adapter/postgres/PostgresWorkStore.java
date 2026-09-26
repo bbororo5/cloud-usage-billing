@@ -152,7 +152,10 @@ public final class PostgresWorkStore implements WorkStore {
     return true;
   }
 
-  public boolean defer(Claim c, String reason, boolean error) {
+  public boolean defer(Claim c, AttributionRules.Deferred outcome) {
+    Objects.requireNonNull(outcome);
+    var reason = outcome.reason();
+    boolean error = outcome instanceof AttributionRules.Failed;
     if (!owns(c)) return false;
     sql.update(
         "update billing.attribution_job set"

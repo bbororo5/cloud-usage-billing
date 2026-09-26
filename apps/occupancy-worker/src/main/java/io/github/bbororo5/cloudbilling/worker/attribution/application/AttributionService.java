@@ -33,12 +33,8 @@ public final class AttributionService {
       var decision =
           HistoryEvidence.decide(
               claim.usage(), history.lookup(HistoryEvidence.query(claim.usage())));
-      if (decision instanceof AttributionRules.Waiting w) {
-        tx.write(() -> store.defer(claim, w.reason(), false));
-        return true;
-      }
-      if (decision instanceof AttributionRules.Failed f) {
-        tx.write(() -> store.defer(claim, f.reason(), true));
+      if (decision instanceof AttributionRules.Deferred deferred) {
+        tx.write(() -> store.defer(claim, deferred));
         return true;
       }
       var a = (AttributionRules.Assigned) decision;

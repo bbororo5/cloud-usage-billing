@@ -16,6 +16,23 @@ import java.util.function.*;
 import org.junit.jupiter.api.*;
 
 class ApprovalBoundaryTest {
+  @Test
+  void incompleteHistoryPreservesWaitingOutcome() {
+    when(history.lookup(any()))
+        .thenReturn(new HistoryReader.NotReady(HistoryReader.Reason.AWAITING_FACTS));
+    service.runOne();
+    verify(store).defer(claim, new AttributionRules.Waiting("HISTORY_INCOMPLETE"));
+    verifyNoInteractions(ledger, guard);
+  }
+
+  @Test
+  void conflictingHistoryPreservesFailureOutcome() {
+    when(history.lookup(any())).thenReturn(new HistoryReader.Conflict(UUID.randomUUID()));
+    service.runOne();
+    verify(store).defer(claim, new AttributionRules.Failed("HISTORY_CONFLICT"));
+    verifyNoInteractions(ledger, guard);
+  }
+
   final Instant start = Instant.parse("2026-09-01T00:00:00Z");
   final UUID occupancy = UUID.randomUUID();
   final Usage usage =

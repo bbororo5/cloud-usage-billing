@@ -19,13 +19,17 @@ public final class AttributionRules {
     }
   }
 
-  public sealed interface Decision permits Assigned, Waiting, Failed {}
+  public sealed interface Decision permits Assigned, Deferred {}
+
+  public sealed interface Deferred extends Decision permits Waiting, Failed {
+    String reason();
+  }
 
   public record Assigned(String account, UUID occupancy, long historyVersion) implements Decision {}
 
-  public record Waiting(String reason) implements Decision {}
+  public record Waiting(String reason) implements Deferred {}
 
-  public record Failed(String reason) implements Decision {}
+  public record Failed(String reason) implements Deferred {}
 
   public Decision decide(Usage usage, Evidence evidence) {
     if (evidence == null) return new Waiting("HISTORY_INCOMPLETE");

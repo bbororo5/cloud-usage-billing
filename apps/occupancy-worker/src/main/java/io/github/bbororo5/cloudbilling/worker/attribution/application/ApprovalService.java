@@ -27,7 +27,7 @@ final class ApprovalService {
       if (verified.isEmpty()) throw new IllegalStateException("Revision not visible yet");
       if (!verified.get().equals(result)) throw new ResultLedger.RevisionConflict();
     } catch (ResultLedger.RevisionConflict e) {
-      tx.write(() -> store.defer(claim, "RESULT_CONFLICT", true));
+      tx.write(() -> store.defer(claim, new AttributionRules.Failed("RESULT_CONFLICT")));
       return;
     }
     guard.locked(
@@ -38,14 +38,14 @@ final class ApprovalService {
           if (decision instanceof AttributionRules.Assigned assigned
               && HistoryEvidence.sameOwner(result, assigned)
               && assigned.historyVersion() == result.historyVersion()) {
-            if (store.monthClosed(result)) return store.defer(claim, "MONTH_FINALIZED", true);
+            if (store.monthClosed(result))
+              return store.defer(claim, new AttributionRules.Failed("MONTH_FINALIZED"));
             return store.recordApproval(claim, result);
           }
           if (decision instanceof AttributionRules.Assigned
               && !HistoryEvidence.sameOwner(result, decision))
-            return store.defer(claim, "OWNERSHIP_CHANGED", true);
-          if (decision instanceof AttributionRules.Failed failed)
-            return store.defer(claim, failed.reason(), true);
+            return store.defer(claim, new AttributionRules.Failed("OWNERSHIP_CHANGED"));
+          if (decision instanceof AttributionRules.Failed failed) return store.defer(claim, failed);
           return store.restart(claim);
         });
   }

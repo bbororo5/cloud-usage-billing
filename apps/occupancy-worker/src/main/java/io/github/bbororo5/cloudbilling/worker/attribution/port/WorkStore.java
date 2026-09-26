@@ -21,7 +21,7 @@ public interface WorkStore {
 
   boolean prepare(Claim claim, Prepared result);
 
-  boolean defer(Claim claim, String reason, boolean error);
+  boolean defer(Claim claim, AttributionRules.Deferred outcome);
 
   boolean restart(Claim claim);
 
