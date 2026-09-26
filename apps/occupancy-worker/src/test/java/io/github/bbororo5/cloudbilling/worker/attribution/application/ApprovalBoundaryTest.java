@@ -18,6 +18,16 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void leaseLossAtPromotionIsFenced() {
+    when(store.owns(claim)).thenReturn(false);
+    service.runOne();
+    verify(store, never()).recordApproval(any(), any());
+    verify(store, never()).restart(any());
+    verify(store, never()).defer(any(), any());
+    verify(store, never()).monthClosed(any());
+  }
+
+  @Test
   void storedContentMismatchOpensFailure() {
     var expected = new Prepared(UUID.randomUUID(), usage, "A", occupancy, 7);
     saved.set(new Prepared(expected.revision(), usage, "B", occupancy, 7));
