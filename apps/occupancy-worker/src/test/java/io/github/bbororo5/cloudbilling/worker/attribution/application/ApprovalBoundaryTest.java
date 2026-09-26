@@ -18,6 +18,50 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void verificationFinishesBeforeEnteringApprovalLock() {
+    var inside = new java.util.concurrent.atomic.AtomicBoolean(false);
+    doAnswer(
+            a -> {
+              inside.set(true);
+              try {
+                return a.<Function<HistoryReader.Result, Object>>getArgument(1)
+                    .apply(confirmed(7, "A"));
+              } finally {
+                inside.set(false);
+              }
+            })
+        .when(guard)
+        .withLockedSnapshot(any(), any());
+    when(ledger.read(any(), any()))
+        .thenAnswer(
+            a -> {
+              assertFalse(inside.get());
+              return Optional.ofNullable(saved.get());
+            });
+    doAnswer(
+            a -> {
+              assertFalse(inside.get());
+              saved.set(a.getArgument(0));
+              return null;
+            })
+        .when(ledger)
+        .append(any());
+    when(store.recordApproval(any(), any()))
+        .thenAnswer(
+            a -> {
+              assertTrue(inside.get());
+              return true;
+            });
+    service.runOne();
+    verify(store).recordApproval(claim, saved.get());
+    var order = inOrder(ledger, guard);
+    order.verify(ledger).read(any(), any());
+    order.verify(ledger).append(any());
+    order.verify(ledger).read(any(), any());
+    order.verify(guard).withLockedSnapshot(any(), any());
+  }
+
+  @Test
   void finalizedMonthBlocksVerifiedResult() {
     when(store.monthClosed(any())).thenReturn(true);
     service.runOne();
