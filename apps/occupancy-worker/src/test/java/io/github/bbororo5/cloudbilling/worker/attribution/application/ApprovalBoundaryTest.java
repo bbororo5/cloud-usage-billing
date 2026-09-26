@@ -18,6 +18,19 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void incompleteLockedSnapshotRequiresRejudgment() {
+    doAnswer(
+            a ->
+                a.<Function<HistoryReader.Result, Object>>getArgument(1)
+                    .apply(new HistoryReader.NotReady(HistoryReader.Reason.AWAITING_FACTS)))
+        .when(guard)
+        .withLockedSnapshot(any(), any());
+    service.runOne();
+    verify(store).restart(claim);
+    verify(store, never()).recordApproval(any(), any());
+  }
+
+  @Test
   void changedOwnerDoesNotReassignPreparedResult() {
     doAnswer(a -> a.<Function<HistoryReader.Result, Object>>getArgument(1).apply(confirmed(8, "B")))
         .when(guard)
