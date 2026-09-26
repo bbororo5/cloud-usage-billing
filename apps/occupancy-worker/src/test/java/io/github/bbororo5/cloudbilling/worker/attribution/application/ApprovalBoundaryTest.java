@@ -18,6 +18,18 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void storedContentMismatchOpensFailure() {
+    var expected = new Prepared(UUID.randomUUID(), usage, "A", occupancy, 7);
+    saved.set(new Prepared(expected.revision(), usage, "B", occupancy, 7));
+    var resumed = new WorkStore.Claim(usage, claim.token(), expected);
+    when(store.claim(anyInt())).thenReturn(Optional.of(resumed));
+    service.runOne();
+    verify(store).defer(resumed, new AttributionRules.Failed("RESULT_CONFLICT"));
+    verifyNoInteractions(guard);
+    verify(store, never()).recordApproval(any(), any());
+  }
+
+  @Test
   void ambiguousWriteCannotApproveOrDiscardPreparation() {
     doThrow(new IllegalStateException("response lost")).when(ledger).append(any());
     assertThrows(IllegalStateException.class, service::runOne);
