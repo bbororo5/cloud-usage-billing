@@ -18,6 +18,18 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void resumedPreparationKeepsItsRevision() {
+    var prepared = new Prepared(UUID.randomUUID(), usage, "A", occupancy, 7);
+    var resumed = new WorkStore.Claim(usage, claim.token(), prepared);
+    when(store.claim(anyInt())).thenReturn(Optional.of(resumed));
+    service.runOne();
+    verifyNoInteractions(history);
+    verify(store, never()).prepare(any(), any());
+    verify(ledger).append(prepared);
+    verify(store).recordApproval(resumed, prepared);
+  }
+
+  @Test
   void failedPreparationNeverWritesLedger() {
     when(store.prepare(any(), any())).thenReturn(false);
     assertTrue(service.runOne());
