@@ -18,6 +18,19 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void newlyConflictingHistoryPreventsApproval() {
+    doAnswer(
+            a ->
+                a.<Function<HistoryReader.Result, Object>>getArgument(1)
+                    .apply(new HistoryReader.Conflict(UUID.randomUUID())))
+        .when(guard)
+        .withLockedSnapshot(any(), any());
+    service.runOne();
+    verify(store).defer(claim, new AttributionRules.Failed("HISTORY_CONFLICT"));
+    verify(store, never()).recordApproval(any(), any());
+  }
+
+  @Test
   void incompleteLockedSnapshotRequiresRejudgment() {
     doAnswer(
             a ->
