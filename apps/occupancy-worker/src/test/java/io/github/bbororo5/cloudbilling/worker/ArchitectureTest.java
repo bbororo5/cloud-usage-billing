@@ -8,6 +8,28 @@ import org.junit.jupiter.api.Test;
 
 class ArchitectureTest {
   @Test
+  void onlyApprovalOwnerCanRecordApproval() {
+    var classes =
+        new ClassFileImporter()
+            .withImportOption(new ImportOption.DoNotIncludeTests())
+            .importPackages("io.github.bbororo5.cloudbilling.worker");
+    noClasses()
+        .that()
+        .doNotHaveFullyQualifiedName(
+            "io.github.bbororo5.cloudbilling.worker.attribution.application.ApprovalService")
+        .should()
+        .callMethodWhere(
+            new com.tngtech.archunit.base.DescribedPredicate<>("record approval") {
+              @Override
+              public boolean test(com.tngtech.archunit.core.domain.JavaMethodCall call) {
+                return call.getTarget().getName().equals("recordApproval")
+                    && call.getTargetOwner().getPackageName().contains(".attribution.");
+              }
+            })
+        .check(classes);
+  }
+
+  @Test
   void boundaries() {
     var classes =
         new ClassFileImporter()
