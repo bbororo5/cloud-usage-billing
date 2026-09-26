@@ -18,6 +18,15 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void ambiguousWriteCannotApproveOrDiscardPreparation() {
+    doThrow(new IllegalStateException("response lost")).when(ledger).append(any());
+    assertThrows(IllegalStateException.class, service::runOne);
+    verifyNoInteractions(guard);
+    verify(store, never()).restart(any());
+    verify(store, never()).defer(any(), any());
+  }
+
+  @Test
   void invisibleStoredResultCannotApprove() {
     when(ledger.read(any(), any())).thenReturn(Optional.empty());
     assertThrows(IllegalStateException.class, service::runOne);
