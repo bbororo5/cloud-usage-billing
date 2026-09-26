@@ -18,6 +18,14 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void invisibleStoredResultCannotApprove() {
+    when(ledger.read(any(), any())).thenReturn(Optional.empty());
+    assertThrows(IllegalStateException.class, service::runOne);
+    verifyNoInteractions(guard);
+    verify(store, never()).recordApproval(any(), any());
+  }
+
+  @Test
   void visibleRevisionIsNotAppendedAgain() {
     var prepared = new Prepared(UUID.randomUUID(), usage, "A", occupancy, 7);
     saved.set(prepared);
