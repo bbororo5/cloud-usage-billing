@@ -18,6 +18,13 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void failedPreparationNeverWritesLedger() {
+    when(store.prepare(any(), any())).thenReturn(false);
+    assertTrue(service.runOne());
+    verifyNoInteractions(ledger, guard);
+  }
+
+  @Test
   void emptyQueueStopsAtClaim() {
     when(store.claim(anyInt())).thenReturn(Optional.empty());
     assertFalse(service.runOne());
