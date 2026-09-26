@@ -24,6 +24,19 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 @Tag("attribution")
 class AttributionFlowTest extends StoreFixture {
+  @Test
+  void approvalRejectsPayloadDifferentFromImmutablePreparation() {
+    register(usage);
+    var claim = atx.write(() -> work.claim(30)).orElseThrow();
+    var prepared = new Prepared(UUID.randomUUID(), usage, "x", occupancy, 5);
+    assertTrue(atx.write(() -> work.prepare(claim, prepared)));
+    var altered = new Prepared(prepared.revision(), usage, "y", occupancy, 5);
+    assertFalse(atx.write(() -> work.recordApproval(claim, altered)));
+    assertTrue(atx.read(() -> work.approved(usage.key())).isEmpty());
+    assertTrue(atx.write(() -> work.recordApproval(claim, prepared)));
+    assertEquals(prepared, atx.read(() -> work.approved(usage.key())).orElseThrow());
+  }
+
   JdbcTransactions atx;
   PostgresWorkStore work;
   ClickHouseLedger ledger, admin;

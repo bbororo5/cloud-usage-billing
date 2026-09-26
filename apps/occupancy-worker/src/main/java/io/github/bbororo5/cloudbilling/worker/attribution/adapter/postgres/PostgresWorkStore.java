@@ -194,13 +194,14 @@ public final class PostgresWorkStore implements WorkStore {
     if (!owns(c)) return false;
     var matches =
         sql.list(
-            "select 1 from billing.attribution_job where source=? and event_id=? and"
-                + " prepared_revision=? and state='PREPARED'",
-            r -> r.getInt(1),
+            "select a.payload from billing.attribution_job j join billing.attribution_attempt a"
+                + " on a.revision=j.prepared_revision where j.source=? and j.event_id=? and"
+                + " j.prepared_revision=? and j.state='PREPARED'",
+            r -> JsonCodec.prepared(r.getString(1)),
             c.usage().key().source(),
             c.usage().key().id(),
             p.revision());
-    if (matches.isEmpty()) return false;
+    if (matches.isEmpty() || !matches.getFirst().equals(p)) return false;
     sql.update(
         "insert into billing.attribution_approval(source,event_id,revision) values(?,?,?)",
         p.usage().key().source(),
