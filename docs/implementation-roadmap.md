@@ -121,7 +121,7 @@ DB 제약은 처리 주체가 아니다. 점유 사실 반영은 2.8, 정산 실
 
 ## 3. 현재 위치와 후속 정리
 
-[점유 이력 LLD](occupancy-history-lld.md)의 수신함 후 Kafka commit·VM별 원자적 반영·DB 버전 캐시를 구현했다. [구현 인계](occupancy-history-implementation-plan.md)의 7개 작업과 로컬 검증을 마쳤다. 실행법·검증 한계는 [워커 README](../apps/occupancy-worker/README.md)를 따른다. 다음은 **사용량 귀속의 공개·정정 연결 LLD**다.
+[점유 이력 LLD](occupancy-history-lld.md)의 수신함 후 Kafka commit·VM별 원자적 반영·DB 버전 캐시를 구현했다. [구현 인계](occupancy-history-implementation-plan.md)의 7개 작업과 로컬 검증을 마쳤다. 실행법·검증 한계는 [워커 README](../apps/occupancy-worker/README.md)를 따른다. 사용량 귀속의 준비·내부 승인도 완료했으며, 고객 공개·과거 정정은 별도 범위다.
 
 2026-09-25 워커 분리, 2026-09-26 영향 VM·구간만 보류하는 정책과 점유 모듈 구현을 승인받았다. 점유 이력 완성을 귀속·고객 공개·월 정산 완료로 확대하지 않는다.
 

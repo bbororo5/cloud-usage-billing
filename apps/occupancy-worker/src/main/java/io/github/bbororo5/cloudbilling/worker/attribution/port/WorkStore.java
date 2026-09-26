@@ -25,7 +25,7 @@ public interface WorkStore {
 
   boolean restart(Claim claim);
 
-  /** Persistence only: the approval service must verify storage and history under the VM lock. */
+  /** Persistence only: approval verifies storage first, then rechecks history under the VM lock. */
   boolean recordApproval(Claim claim, Prepared result);
 
   Optional<Prepared> approved(Usage.Key key);

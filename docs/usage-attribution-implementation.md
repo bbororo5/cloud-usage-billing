@@ -5,12 +5,15 @@
 **당시 회사 귀속 → 저장 검증 → 내부 승인·복구**를 기존 점유 워커에 추가했다. 새 서버·Kafka 소비자는 없다. 고객 공개·가격 계산·월간 확정·과거 정정은 미완료다.
 
 ```text
-ClickHouse 원시 원장 → 발견·작업 등록 → 귀속 판단 ← HistoryReader
-                                       ↓
-                              불변 개정 준비 → ClickHouse 저장·검증
-                                       ↓
-HistoryGuard → VM 잠금·근거 재검증 → PostgreSQL 승인
-                   └─ 내부 조회: 차단 검사 → 승인 개정만 읽기
+발견 → AttributionService: 판단·불변 개정 준비
+                   ↓
+       ApprovalService: ClickHouse 저장·검증
+                   ↓
+       HistoryGuard: 잠금·최신 이력 제공
+                   ↓ 같은 트랜잭션
+       ApprovalService: 근거 재검증 → WorkStore: 승인 기록
+
+내부 조회: 잠금·차단 검사 → 승인 개정만 읽기
 ```
 
 ## 2. 책임과 안전장치
@@ -22,7 +25,9 @@ HistoryGuard → VM 잠금·근거 재검증 → PostgreSQL 승인
 | 준비·저장 | 30초 임대와 실행 토큰으로 오래된 실행자 차단. 불변 개정을 재전송하고 일반 뷰로 중복 제거·내용 충돌 검사 |
 | 승인 | CH 호출 후 VM 잠금 아래 버전·확인 범위·오류·작업 소유권 재검증. PG가 승인한 개정만 유효 |
 | 내부 조회 | 회사·승인·현재 차단 상태 확인 후 VM 잠금 안에서 결과 읽기. 장애는 `AttributionUnavailable`, 타사/미승인/차단은 `Withheld` |
-| 운영 | 대기 자동 재확인, 오류는 권한 있는 재시도. 예약만으로 오류 해제하지 않으며 검증 성공 후 해제 |
+| 운영 | `Waiting`은 자동 재확인, `Failed`는 권한 있는 재시도. 결과 타입을 저장 경계까지 유지하며 예약만으로 오류를 해제하지 않음 |
+
+승인 판단은 모듈 내부 `ApprovalService`만 담당하며 우회 호출은 구조 테스트로 막는다. `WorkStore`는 저장된 준비 내용과 정확히 같은 승인만 기록한다. `HistoryGuard`는 승인자가 아니다. 잠금 아래 미확인·충돌 결과도 그대로 전달하고, 콜백 실패 시 같은 트랜잭션의 쓰기를 롤백한다. 승인용 CH 검증은 잠금 밖, 내부 조회의 CH 읽기는 잠금 안에서 수행한다.
 
 귀속 전용 PG 계정은 점유 테이블을 수정할 수 없다. 점유 모듈 소유의 제한 함수와 `HistoryGuard`만 동일 트랜잭션에 참여한다. PG에는 작업·불변 준비/전이·승인·오류·운영 감사를 보존한다. CH에는 검증용 전체 payload를 고정하며 고객용 OLAP 조회 모델로 간주하지 않는다.
 
@@ -40,7 +45,8 @@ docker compose -f compose.yaml -f compose.occupancy.yaml -f compose.attribution.
 직접 실행은 기존 `OCCUPANCY_DB_URL/PASSWORD`에 `ATTRIBUTION_ENABLED=true`, `ATTRIBUTION_DB_URL/PASSWORD`, `ATTRIBUTION_CLICKHOUSE_URL/PASSWORD`를 추가한다. 기본은 비활성이다.
 
 - 순수 규칙: 과거 회사·구간 경계·유휴·다중 점유·확인 부족·충돌·UInt64 상한.
-- 실제 PG·CH 21건: 등록/진도 rollback, 지연 발견, 동시 확보·만료 실행자, 재전송·내용 충돌, 승인/조회 잠금·후속 오류, 타사 차단, 운영 권한·알림 재전달·회사 등록 후 복구.
+- 승인 경계 17건과 구조 검사: 우회 호출, 저장 불명확·충돌, 이력 변경, 소유권 만료, 마감, 잠금 안팎 호출 순서.
+- 실제 PG·CH 24건: 등록/진도 rollback, 지연 발견, 동시 확보·만료 실행자, 재전송·내용 충돌, 승인/조회 잠금·후속 오류, 타사 차단, 운영 복구. 불변 준비 내용 대조·콜백 rollback·트랜잭션 연결 오류도 검증.
 - 별도 JVM을 CH 저장 후 강제 종료하고 재시작해 같은 개정으로 승인한다. 기존 점유 Kafka 복구 검사는 별도로 유지한다.
 
 고정 구간표·DB 상태·승인 개정으로 판단한다. 경합은 latch/`NOWAIT`로 재현하며 프로세스 polling은 완료 조건 대기용이다. 스크립트는 자체 테스트 컨테이너만 생성·정리한다. 로컬 통과와 새 원격 CI 실행 결과는 구분한다.
