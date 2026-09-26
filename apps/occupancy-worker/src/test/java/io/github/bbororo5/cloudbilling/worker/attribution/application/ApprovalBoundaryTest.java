@@ -18,6 +18,17 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void changedOwnerDoesNotReassignPreparedResult() {
+    doAnswer(a -> a.<Function<HistoryReader.Result, Object>>getArgument(1).apply(confirmed(8, "B")))
+        .when(guard)
+        .withLockedSnapshot(any(), any());
+    service.runOne();
+    verify(store).defer(claim, new AttributionRules.Failed("OWNERSHIP_CHANGED"));
+    verify(store, never()).restart(any());
+    verify(store, never()).recordApproval(any(), any());
+  }
+
+  @Test
   void versionChangeRestartsInsteadOfApprovingOldEvidence() {
     doAnswer(a -> a.<Function<HistoryReader.Result, Object>>getArgument(1).apply(confirmed(8, "A")))
         .when(guard)
