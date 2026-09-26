@@ -187,7 +187,7 @@ public final class PostgresWorkStore implements WorkStore {
     return true;
   }
 
-  public boolean approve(Claim c, Prepared p) {
+  public boolean recordApproval(Claim c, Prepared p) {
     if (!owns(c)) return false;
     var matches =
         sql.list(

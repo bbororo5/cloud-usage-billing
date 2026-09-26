@@ -10,8 +10,7 @@ public final class AttributionService {
   private final TransactionRunner tx;
   private final WorkStore store;
   private final HistoryReader history;
-  private final HistoryGuard guard;
-  private final ResultLedger ledger;
+  private final ApprovalService approval;
 
   public AttributionService(
       TransactionRunner tx,
@@ -22,8 +21,7 @@ public final class AttributionService {
     this.tx = tx;
     this.store = store;
     this.history = history;
-    this.guard = guard;
-    this.ledger = ledger;
+    this.approval = new ApprovalService(tx, store, guard, ledger);
   }
 
   public boolean runOne() {
@@ -50,36 +48,7 @@ public final class AttributionService {
       var prepared = p;
       if (!tx.write(() -> store.prepare(claim, prepared))) return true;
     }
-    // Persisted payload is reused after response loss or restart. No VM lock crosses these writes.
-    var result = p;
-    try {
-      var existing = ledger.read(result.usage().key(), result.revision());
-      if (existing.isEmpty()) ledger.append(result);
-      var verified = ledger.read(result.usage().key(), result.revision());
-      if (verified.isEmpty()) throw new IllegalStateException("Revision not visible yet");
-      if (!verified.get().equals(result)) throw new ResultLedger.RevisionConflict();
-    } catch (ResultLedger.RevisionConflict e) {
-      tx.write(() -> store.defer(claim, "RESULT_CONFLICT", true));
-      return true;
-    }
-    guard.locked(
-        HistoryEvidence.query(result.usage()),
-        h -> {
-          if (!store.owns(claim)) return false;
-          var decision = HistoryEvidence.decide(result.usage(), h);
-          if (decision instanceof AttributionRules.Assigned a
-              && HistoryEvidence.sameOwner(result, a)
-              && a.historyVersion() == result.historyVersion()) {
-            if (store.monthClosed(result)) return store.defer(claim, "MONTH_FINALIZED", true);
-            return store.approve(claim, result);
-          }
-          if (decision instanceof AttributionRules.Assigned
-              && !HistoryEvidence.sameOwner(result, decision))
-            return store.defer(claim, "OWNERSHIP_CHANGED", true);
-          if (decision instanceof AttributionRules.Failed f)
-            return store.defer(claim, f.reason(), true);
-          return store.restart(claim);
-        });
+    approval.complete(claim, p);
     return true;
   }
 }

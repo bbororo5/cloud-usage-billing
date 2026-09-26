@@ -156,7 +156,7 @@ class AttributionFlowTest extends StoreFixture {
     var newer = atx.write(() -> work.claim(30)).orElseThrow();
     var p = new Prepared(UUID.randomUUID(), usage, "x", occupancy, 5);
     assertFalse(atx.write(() -> work.prepare(old, p)));
-    assertFalse(atx.write(() -> work.approve(old, p)));
+    assertFalse(atx.write(() -> work.recordApproval(old, p)));
     assertFalse(atx.write(() -> work.defer(old, "oops", true)));
     assertTrue(atx.write(() -> work.prepare(newer, p)));
   }
