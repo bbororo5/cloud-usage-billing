@@ -18,6 +18,17 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void visibleRevisionIsNotAppendedAgain() {
+    var prepared = new Prepared(UUID.randomUUID(), usage, "A", occupancy, 7);
+    saved.set(prepared);
+    when(store.claim(anyInt()))
+        .thenReturn(Optional.of(new WorkStore.Claim(usage, claim.token(), prepared)));
+    service.runOne();
+    verify(ledger, never()).append(any());
+    verify(store).recordApproval(any(), eq(prepared));
+  }
+
+  @Test
   void resumedPreparationKeepsItsRevision() {
     var prepared = new Prepared(UUID.randomUUID(), usage, "A", occupancy, 7);
     var resumed = new WorkStore.Claim(usage, claim.token(), prepared);
