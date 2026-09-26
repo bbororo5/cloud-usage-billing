@@ -16,6 +16,14 @@ import java.util.function.*;
 import org.junit.jupiter.api.*;
 
 class ApprovalBoundaryTest {
+
+  @Test
+  void emptyQueueStopsAtClaim() {
+    when(store.claim(anyInt())).thenReturn(Optional.empty());
+    assertFalse(service.runOne());
+    verifyNoInteractions(history, guard, ledger);
+  }
+
   @Test
   void incompleteHistoryPreservesWaitingOutcome() {
     when(history.lookup(any()))
