@@ -18,6 +18,16 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void versionChangeRestartsInsteadOfApprovingOldEvidence() {
+    doAnswer(a -> a.<Function<HistoryReader.Result, Object>>getArgument(1).apply(confirmed(8, "A")))
+        .when(guard)
+        .withLockedSnapshot(any(), any());
+    service.runOne();
+    verify(store).restart(claim);
+    verify(store, never()).recordApproval(any(), any());
+  }
+
+  @Test
   void leaseLossAtPromotionIsFenced() {
     when(store.owns(claim)).thenReturn(false);
     service.runOne();
