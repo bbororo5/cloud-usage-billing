@@ -18,6 +18,14 @@ import org.junit.jupiter.api.*;
 class ApprovalBoundaryTest {
 
   @Test
+  void finalizedMonthBlocksVerifiedResult() {
+    when(store.monthClosed(any())).thenReturn(true);
+    service.runOne();
+    verify(store).defer(claim, new AttributionRules.Failed("MONTH_FINALIZED"));
+    verify(store, never()).recordApproval(any(), any());
+  }
+
+  @Test
   void newlyConflictingHistoryPreventsApproval() {
     doAnswer(
             a ->
