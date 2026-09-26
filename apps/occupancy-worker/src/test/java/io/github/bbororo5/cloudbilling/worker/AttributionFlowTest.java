@@ -25,6 +25,30 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 @Tag("attribution")
 class AttributionFlowTest extends StoreFixture {
   @Test
+  void disconnectedTransactionContextFailsClosed() {
+    register(usage);
+    var claim = atx.write(() -> work.claim(30)).orElseThrow();
+    var prepared = new Prepared(UUID.randomUUID(), usage, "x", occupancy, 5);
+    var disconnected =
+        new JdbcTransactions(
+            new DriverManagerDataSource(
+                System.getenv("OCCUPANCY_TEST_URL"), "billing_attribution", "local-dev-only"));
+    var wrongGuard = new PostgresHistoryGuard(disconnected);
+    var query =
+        new io.github.bbororo5.cloudbilling.worker.occupancyhistory.api.HistoryReader.Query(
+            source, usage.from(), usage.to());
+    var failure =
+        assertThrows(
+            IllegalStateException.class,
+            () -> wrongGuard.withLockedSnapshot(query, snapshot -> work.prepare(claim, prepared)));
+    assertEquals("No transaction", failure.getMessage());
+    assertThrows(IllegalStateException.class, disconnected::connection);
+    assertThrows(IllegalStateException.class, atx::connection);
+    assertTrue(atx.write(() -> work.prepare(claim, prepared)));
+    assertTrue(atx.read(() -> work.approved(usage.key())).isEmpty());
+  }
+
+  @Test
   void lockedCallbackFailureRollsBackItsWrites() {
     register(usage);
     var claim = atx.write(() -> work.claim(30)).orElseThrow();
