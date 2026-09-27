@@ -25,6 +25,92 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 @Tag("attribution")
 class AttributionFlowTest extends StoreFixture {
   @Test
+  void runningWorkerDiscoversDuplicatesAndKeepsOtherVmAvailableAcrossRestart() throws Exception {
+    String other = source + ":acceptance";
+    var otherOccupancy = UUID.randomUUID();
+    receive(event(other, 1, Event.Kind.INITIALIZED, null, null), 20);
+    apply.runDue(10);
+    receive(event(other, 2, Event.Kind.STARTED, otherOccupancy, "y"), 21);
+    apply.runDue(10);
+    receive(event(other, 3, Event.Kind.CONFIRMED, null, null), 22);
+    apply.runDue(10);
+    var otherUsage =
+        new Usage(
+            new Usage.Key(other, UUID.randomUUID()),
+            usage.subject(),
+            usage.from(),
+            usage.to(),
+            usage.region(),
+            usage.resource(),
+            usage.resourceType(),
+            usage.measurements());
+    raw(usage);
+    raw(
+        usage); // Duplicate delivery must remain one logical event, including all three
+                // measurements.
+    raw(otherUsage);
+    assertTrue(atx.read(() -> work.approved(usage.key())).isEmpty());
+    var log = java.nio.file.Files.createTempFile("attribution-acceptance-", ".log");
+    Process child = null;
+    try {
+      child = startWorker(log); // No manual registration or service.runOne(): use the real loop.
+      await(
+          () ->
+              atx.read(() -> work.approved(usage.key())).isPresent()
+                  && atx.read(() -> work.approved(otherUsage.key())).isPresent());
+      var historical = assertInstanceOf(AttributionReader.Ready.class, read("x"));
+      assertEquals(occupancy, historical.occupancy());
+      assertInstanceOf(AttributionReader.Withheld.class, read("y"));
+      var original = atx.read(() -> work.approved(usage.key())).orElseThrow();
+      assertEquals(usage, original.usage());
+      assertEquals(original, ledger.read(usage.key(), original.revision()).orElseThrow());
+      var otherApproved = atx.read(() -> work.approved(otherUsage.key())).orElseThrow();
+
+      receive(event(source, 3, Event.Kind.ENDED, UUID.randomUUID(), null), 23);
+      assertInstanceOf(AttributionReader.Withheld.class, read("x"));
+      assertInstanceOf(
+          AttributionReader.Ready.class,
+          reader.lookup(new AttributionReader.Query("y", other, otherUsage.key().id())));
+      child.destroyForcibly();
+      assertTrue(child.waitFor(10, TimeUnit.SECONDS));
+      child = null;
+
+      raw(usage);
+      raw(otherUsage);
+      var afterRestart =
+          new Usage(
+              new Usage.Key(other, UUID.randomUUID()),
+              otherUsage.subject(),
+              otherUsage.from(),
+              otherUsage.to(),
+              otherUsage.region(),
+              otherUsage.resource(),
+              otherUsage.resourceType(),
+              otherUsage.measurements());
+      raw(afterRestart);
+      child = startWorker(log);
+      await(() -> atx.read(() -> work.approved(afterRestart.key())).isPresent());
+      assertEquals(original, atx.read(() -> work.approved(usage.key())).orElseThrow());
+      assertEquals(otherApproved, atx.read(() -> work.approved(otherUsage.key())).orElseThrow());
+      assertInstanceOf(AttributionReader.Withheld.class, read("x"));
+      assertInstanceOf(
+          AttributionReader.Ready.class,
+          reader.lookup(new AttributionReader.Query("y", other, afterRestart.key().id())));
+      assertInstanceOf(
+          AttributionReader.Withheld.class,
+          reader.lookup(new AttributionReader.Query("x", other, afterRestart.key().id())));
+    } catch (Throwable e) {
+      throw new AssertionError("Worker log: " + java.nio.file.Files.readString(log), e);
+    } finally {
+      if (child != null) {
+        child.destroyForcibly();
+        child.waitFor(10, TimeUnit.SECONDS);
+      }
+      java.nio.file.Files.deleteIfExists(log);
+    }
+  }
+
+  @Test
   void disconnectedTransactionContextFailsClosed() {
     register(usage);
     var claim = atx.write(() -> work.claim(30)).orElseThrow();
