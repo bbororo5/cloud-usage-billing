@@ -24,11 +24,12 @@ generate() {
     --network-bytes 18446744073709551615
 }
 wait_query() {
+  local observed
   for ((i=0;i<60;i++)); do
-    if [[ "$(ch "$1" 2>/dev/null)" == "$2" ]]; then return; fi
+    if observed="$(ch "$1" 2>&1)" && [[ "$observed" == "$2" ]]; then return; fi
     sleep 1
   done
-  echo "Query did not reach expected result $2: $1" >&2; exit 1
+  echo "Query did not reach expected result $2: $1; last observation: $observed" >&2; exit 1
 }
 offset_sum() {
   kafka kafka-consumer-groups.sh --group usage-clickhouse-v1 --describe 2>/dev/null |
