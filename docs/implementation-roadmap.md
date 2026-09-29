@@ -121,7 +121,7 @@ DB 제약은 처리 주체가 아니다. 점유 사실 반영은 2.8, 정산 실
 
 ## 3. 현재 위치와 후속 정리
 
-**현재:** [BFF 고객 조회·접근 통제 LLD](bff-access-lld.md)의 ① 책임·경계와 ② 인터페이스 계약을 승인했다. 다음 대화는 ③ 입력·상태 공간 분해와 테스트 오라클·범위 선택이다. BFF 업무 구현은 아직 시작하지 않는다.
+**현재:** [BFF LLD](bff-access-lld.md)의 ① 책임·경계와 ② 인터페이스 계약은 승인됐고, [③ 테스트 설계](bff-access-test-design.md)의 검증 목적 33개·오라클·최소 범위를 작성했다. 다음은 미승인 관문 G1–G6 검토 후 ④ 내부 책임·협력이다. BFF 업무 구현은 아직 시작하지 않는다.
 
 [점유 이력 LLD](occupancy-history-lld.md)의 수신함 후 Kafka commit·VM별 원자적 반영·DB 버전 캐시를 구현했다. [구현 인계](occupancy-history-implementation-plan.md)의 7개 작업과 로컬 검증을 마쳤다. 실행법·검증 한계는 [워커 README](../apps/occupancy-worker/README.md)를 따른다. 사용량 귀속의 준비·내부 승인도 완료했으며, 고객 공개·과거 정정은 별도 범위다.
 
@@ -165,4 +165,4 @@ DB 제약은 처리 주체가 아니다. 점유 사실 반영은 2.8, 정산 실
 
 ## 6. 새 세션 인계 프롬프트
 
-> docs/implementation-roadmap.md와 docs/implementation-status.md, docs/usage-attribution-implementation.md, 적용되는 AGENTS.md를 읽어줘. 사용자 감독은 C3까지이고 C4 표현은 에이전트 책임이야. 수집·점유 이력·귀속 준비/내부 승인/복구는 구현·로컬 검증했어. 다음은 BFF 인증/인가와 PG 승인·차단, CH 테넌트 격리를 잇는 고객 조회 경계 LLD야. 고객 권한은 아직 닫혀 있어. 과거 정정·가격 계산·월 정산·실제 운영 인증/알림은 미완료야. 기존 구현을 반복 설계하지 말고 요청 범위에 맞춰 진행해.
+> docs/implementation-roadmap.md와 docs/implementation-status.md, docs/bff-access-lld.md, docs/bff-access-test-design.md, 적용되는 AGENTS.md를 읽어줘. 사용자 감독은 C3까지이고 C4 표현은 에이전트 책임이야. 수집·점유 이력·귀속 준비/내부 승인/복구는 구현·로컬 검증했어. BFF LLD ① 책임·경계와 ② 계약은 승인됐고 ③ 테스트 설계 초안은 작성했어. 다음은 G1–G6 미결 관문 검토 후 ④ 내부 책임·협력이야. 테스트 구현·실행이나 고객 격리 완료로 간주하지 마. 고객 권한은 아직 닫혀 있고 과거 정정·가격 계산·월 정산·실제 운영 인증/알림은 미완료야. 기존 구현을 반복 설계하지 말고 사용자와 개념부터 맞춰 진행해.
