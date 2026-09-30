@@ -55,6 +55,23 @@ class ApiContractTest {
     }
 
     @Test
+    void protectedUserOperationsDeclareDependencyFailures() {
+        api.path("paths").fields().forEachRemaining(path -> {
+            if (path.getKey().equals("/usage-events")) return;
+            path.getValue().fields().forEachRemaining(operation -> {
+                if (!List.of("get", "post", "put", "delete").contains(operation.getKey())) return;
+                if (path.getKey().equals("/session") && operation.getKey().equals("post")) return;
+                JsonNode response = resolve(operation.getValue().at("/responses/503"));
+                assertThat(response.at("/content/application~1problem+json/schema/$ref").asText())
+                        .as(path.getKey() + " " + operation.getKey() + " dependency failure")
+                        .isEqualTo("#/components/schemas/Error");
+            });
+        });
+        assertThat(api.at("/paths/~1me/get/responses/403/$ref").asText())
+                .isEqualTo("#/components/responses/Forbidden");
+    }
+
+    @Test
     void referencesResolveLocallyWithoutNetwork() {
         checkReferences(api);
     }

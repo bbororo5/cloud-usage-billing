@@ -75,6 +75,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CurrentUser'
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '503': { $ref: '#/components/responses/UserUnavailable' }
   /costs:
     get:
@@ -162,6 +163,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
   /usage-records:
     get:
       tags: [Usage]
@@ -201,6 +203,7 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
   /billing-members:
     get:
       tags: [Members]
@@ -222,6 +225,7 @@ paths:
                     items: { $ref: '#/components/schemas/BillingMember' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
   /billing-members/{userId}/role:
     parameters:
       - $ref: '#/components/parameters/UserId'
@@ -229,6 +233,7 @@ paths:
       tags: [Members]
       operationId: putBillingMemberRole
       summary: 과금 역할 부여 또는 변경
+      description: 변경 완료 시 관련 세션을 폐기한다. 이미 인가를 통과한 업무는 완료할 수 있으며 이후 인가에는 현재 소속·역할을 적용한다.
       security:
         - UserSession: []
       parameters:
@@ -254,10 +259,12 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
     delete:
       tags: [Members]
       operationId: deleteBillingMemberRole
       summary: 과금 역할 제거
+      description: 제거 완료 시 관련 세션을 폐기한다. 이미 인가를 통과한 업무는 완료할 수 있으며 이후 인가에는 현재 소속·역할을 적용한다.
       security:
         - UserSession: []
       parameters:
@@ -268,6 +275,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
   /usage-events:
     post:
       deprecated: true
