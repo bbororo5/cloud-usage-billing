@@ -24,6 +24,7 @@ paths:
       tags: [Session]
       operationId: createSession
       summary: 로그인
+      description: 유효한 인증 세션이 있으면 409로 거부하고 기존 신원과 세션 ID를 유지한다. 계정 변경은 로그아웃 후 로그인한다.
       security: []
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
@@ -42,10 +43,14 @@ paths:
                 type: string
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/SessionConflict' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
     delete:
       tags: [Session]
       operationId: deleteSession
       summary: 로그아웃
+      description: 서버 세션 폐기가 완료된 뒤 세션을 검사하는 요청은 401로 거부한다. 이미 세션 검증을 마친 요청은 인가·공개 검사를 계속 수행한다.
       security:
         - UserSession: []
       parameters:
@@ -53,6 +58,8 @@ paths:
       responses:
         '204': { description: 로그아웃 성공 }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
   /me:
     get:
       tags: [Session]
@@ -68,6 +75,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CurrentUser'
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/UserUnavailable' }
   /costs:
     get:
       tags: [Costs]
@@ -289,7 +297,7 @@ components:
       type: apiKey
       in: cookie
       name: SESSION
-      description: HttpOnly·Secure·SameSite=Strict 서버 세션 쿠키
+      description: HttpOnly·Secure·SameSite=Strict 서버 세션 쿠키. 비활동 30분 만료이며 서버 시각이 마지막 접근+30분 이상이면 무효다. 유효 세션으로 인증된 요청 시작 시 접근을 갱신하며 절대 만료는 별도로 두지 않는다.
     ProducerCredential:
       type: http
       scheme: bearer
@@ -459,7 +467,7 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Error' }
     Forbidden:
-      description: 역할 부족
+      description: 역할 부족 또는 CSRF 검증 실패
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Error' }
@@ -473,6 +481,18 @@ components:
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Error' }
+    SessionConflict:
+      description: 유효한 인증 세션으로 재로그인 시도. 기존 신원·세션 ID는 유지됨
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { code: SESSION_ALREADY_AUTHENTICATED, traceId: trace-example }
+    UserUnavailable:
+      description: 요청을 안전하게 처리할 수 없음. 내부 원인·비공개 범위·데이터 개수는 공개하지 않음
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { code: SERVICE_UNAVAILABLE, traceId: trace-example }
     UnprocessableEntity:
       description: 사용량 의미 규칙 위반
       content:

@@ -39,6 +39,22 @@ class ApiContractTest {
     }
 
     @Test
+    void sessionOperationsDeclareConflictCsrfAndStorageFailures() {
+        assertThat(api.at("/paths/~1session/post/responses/409/$ref").asText())
+                .isEqualTo("#/components/responses/SessionConflict");
+        for (String operation : List.of("post", "delete")) {
+            assertThat(api.at("/paths/~1session/" + operation + "/responses/403/$ref").asText())
+                    .isEqualTo("#/components/responses/Forbidden");
+            assertThat(api.at("/paths/~1session/" + operation + "/responses/503/$ref").asText())
+                    .isEqualTo("#/components/responses/UserUnavailable");
+        }
+        assertThat(api.at("/paths/~1me/get/responses/503/$ref").asText())
+                .isEqualTo("#/components/responses/UserUnavailable");
+        assertThat(api.at("/components/responses/SessionConflict/content/application~1problem+json/example/code").asText())
+                .isEqualTo("SESSION_ALREADY_AUTHENTICATED");
+    }
+
+    @Test
     void referencesResolveLocallyWithoutNetwork() {
         checkReferences(api);
     }
@@ -67,9 +83,11 @@ class ApiContractTest {
     }
 
     @Test
-    void costResponseBindingUsesTheSchemaCoveredByFixtures() {
+    void responseBindingsUseSchemasCoveredByFixtures() {
         assertThat(api.at("/paths/~1costs/get/responses/200/content/application~1json/schema/$ref").asText())
                 .isEqualTo("#/components/schemas/CostResponse");
+        assertThat(api.at("/paths/~1me/get/responses/200/content/application~1json/schema/$ref").asText())
+                .isEqualTo("#/components/schemas/CurrentUser");
     }
 
     @TestFactory
