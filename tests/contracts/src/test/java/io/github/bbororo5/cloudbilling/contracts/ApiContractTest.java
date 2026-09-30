@@ -71,6 +71,25 @@ class ApiContractTest {
                 .isEqualTo("#/components/responses/Forbidden");
     }
 
+    @TestFactory
+    Stream<DynamicTest> queryUnavailableExamplesHideFailureCauses() {
+        return Stream.of("/costs", "/usage-records", "/settlements/{billingMonth}")
+                .map(path -> dynamicTest(path + " unavailable response", () -> {
+                    JsonNode response = resolve(api.path("paths").path(path).at("/get/responses/503"));
+                    JsonNode example = response.at("/content/application~1problem+json/example");
+                    assertThat(example.path("code").asText()).isEqualTo("SERVICE_UNAVAILABLE");
+                    assertThat(example.path("traceId").asText()).isNotBlank();
+                    ObjectNode root = ContractFiles.JSON.createObjectNode();
+                    root.put("$ref", "#/components/schemas/Error");
+                    root.set("components", api.path("components"));
+                    Schema schema = ContractFiles.schema(root);
+                    assertThat(ContractFiles.errors(schema, example)).isEmpty();
+                    ObjectNode leaking = ((ObjectNode) example).deepCopy();
+                    leaking.put("blockedCount", 1);
+                    assertThat(ContractFiles.errors(schema, leaking)).isNotEmpty();
+                }));
+    }
+
     @Test
     void referencesResolveLocallyWithoutNetwork() {
         checkReferences(api);
